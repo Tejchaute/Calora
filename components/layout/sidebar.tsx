@@ -33,7 +33,7 @@ export function DashboardSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
             <CalendarIcon className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold text-white">Schedora</span>
+          <span className="text-lg font-semibold text-white">Calora</span>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">

@@ -285,7 +285,7 @@ export function BookingPage() {
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <span className="font-semibold text-slate-900">
-              {businessSettings?.business_name || 'Schedora'}
+              {businessSettings?.business_name || 'Calora'}
             </span>
           </Link>
           <Link href="/">

@@ -8,7 +8,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
             <Calendar className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold text-white">Schedora</span>
+          <span className="text-lg font-semibold text-white">Calora</span>
         </div>
         <div>
           <h2 className="text-3xl font-bold text-white">
@@ -32,7 +32,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-        <p className="text-sm text-slate-500">© 2025 Schedora. All rights reserved.</p>
+        <p className="text-sm text-slate-500">© 2025 Calora. All rights reserved.</p>
       </div>
 
       <div className="flex w-full items-center justify-center bg-white p-6 lg:w-1/2 lg:p-12">

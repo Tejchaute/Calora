@@ -7,11 +7,11 @@ import { AuthProvider, ThemeProvider } from '@/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Schedora — Smart Appointment Booking & Business Management',
+  title: 'Calora — Smart Appointment Booking & Business Management',
   description:
-    'Schedora is a modern appointment booking and business management platform for clinics, salons, studios, gyms, tutors, and consultants.',
+    'Calora is a modern appointment booking and business management platform for clinics, salons, studios, gyms, tutors, and consultants.',
   openGraph: {
-    title: 'Schedora — Smart Appointment Booking & Business Management',
+    title: 'Calora — Smart Appointment Booking & Business Management',
     description:
       'A modern appointment booking and business management platform for clinics, salons, studios, gyms, tutors, and consultants.',
     type: 'website',

@@ -119,9 +119,9 @@ const PRICING = [
 
 const FAQS = [
   {
-    question: 'What types of businesses can use Schedora?',
+    question: 'What types of businesses can use Calora?',
     answer:
-      'Schedora is built for any appointment-based business — clinics, dental offices, salons, beauty parlours, tattoo studios, physiotherapists, gyms, tutors, consultants, and lawyers. The platform is fully configurable so it adapts to your industry, not the other way around.',
+      'Calora is built for any appointment-based business — clinics, dental offices, salons, beauty parlours, tattoo studios, physiotherapists, gyms, tutors, consultants, and lawyers. The platform is fully configurable so it adapts to your industry, not the other way around.',
   },
   {
     question: 'Do my customers need to create an account to book?',
@@ -136,7 +136,7 @@ const FAQS = [
   {
     question: 'Is my data secure?',
     answer:
-      "Absolutely. Schedora uses Supabase with row-level security, encrypted authentication, and industry-standard best practices. Your business data and your customers' information stay private.",
+      "Absolutely. Calora uses Supabase with row-level security, encrypted authentication, and industry-standard best practices. Your business data and your customers' information stay private.",
   },
   {
     question: 'Can I cancel anytime?',
@@ -176,7 +176,7 @@ export function LandingPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
               <Calendar className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold text-slate-900">Schedora</span>
+            <span className="text-lg font-semibold text-slate-900">Calora</span>
           </div>
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900">Features</a>
@@ -222,7 +222,7 @@ export function LandingPage() {
               Smart appointment booking for <span className="text-blue-600">every business</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-              Schedora is the all-in-one platform that helps clinics, salons, studios, gyms, tutors, and consultants manage appointments, customers, and staff — all in one beautiful dashboard.
+              Calora is the all-in-one platform that helps clinics, salons, studios, gyms, tutors, and consultants manage appointments, customers, and staff — all in one beautiful dashboard.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/register"><Button size="lg" className="w-full sm:w-auto">Start free trial<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
@@ -240,7 +240,7 @@ export function LandingPage() {
                 <div className="h-3 w-3 rounded-full bg-red-400" />
                 <div className="h-3 w-3 rounded-full bg-yellow-400" />
                 <div className="h-3 w-3 rounded-full bg-green-400" />
-                <div className="ml-4 flex-1 text-center text-sm text-slate-500">schedora.app/dashboard</div>
+                <div className="ml-4 flex-1 text-center text-sm text-slate-500">calora.app/dashboard</div>
               </div>
               <div className="grid grid-cols-12 gap-0 bg-white">
                 <div className="col-span-3 hidden border-r border-slate-200 bg-slate-900 p-4 sm:block">
@@ -305,7 +305,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Everything you need to run your business</h2>
-            <p className="mt-4 text-lg text-slate-600">From booking to billing, Schedora gives you the tools to manage your entire operation in one place.</p>
+            <p className="mt-4 text-lg text-slate-600">From booking to billing, Calora gives you the tools to manage your entire operation in one place.</p>
           </div>
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((feature) => (
@@ -381,7 +381,7 @@ export function LandingPage() {
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
-              { name: 'Dr. Sarah Chen', role: 'Owner, Chen Dental Clinic', quote: 'Schedora cut our no-show rate in half. The booking page looks professional and our patients love how easy it is.' },
+              { name: 'Dr. Sarah Chen', role: 'Owner, Chen Dental Clinic', quote: 'Calora cut our no-show rate in half. The booking page looks professional and our patients love how easy it is.' },
               { name: 'Marcus Rivera', role: 'Founder, Inked Studio', quote: 'I manage four artists and a full calendar without breaking a sweat. The staff scheduling is a game changer.' },
               { name: 'Priya Sharma', role: 'Tutor & Consultant', quote: 'I went from juggling spreadsheets to one dashboard. My clients book themselves now — I just show up.' },
             ].map((t) => (
@@ -411,7 +411,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Frequently asked questions</h2>
-            <p className="mt-4 text-lg text-slate-600">Everything you need to know about Schedora.</p>
+            <p className="mt-4 text-lg text-slate-600">Everything you need to know about Calora.</p>
           </div>
           <div className="mt-12">
             <Accordion type="single" collapsible className="space-y-4">
@@ -455,7 +455,7 @@ export function LandingPage() {
       <section className="bg-blue-600 py-16">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to transform your booking experience?</h2>
-          <p className="mt-4 text-lg text-blue-100">Join thousands of businesses that save hours every week with Schedora.</p>
+          <p className="mt-4 text-lg text-blue-100">Join thousands of businesses that save hours every week with Calora.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/register"><Button size="lg" variant="secondary" className="w-full sm:w-auto">Start your free trial<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
             <Link href="/book"><Button size="lg" variant="outline" className="w-full border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto"><Calendar className="mr-2 h-4 w-4" />Book an appointment</Button></Link>
@@ -471,7 +471,7 @@ export function LandingPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-white">Schedora</span>
+                <span className="text-lg font-semibold text-white">Calora</span>
               </div>
               <p className="mt-4 text-sm text-slate-400">Smart appointment booking and business management for every industry.</p>
             </div>
@@ -502,7 +502,7 @@ export function LandingPage() {
           </div>
           <div className="mt-12 border-t border-slate-800 pt-8">
             <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-              <p className="text-sm text-slate-400">© 2025 Schedora. All rights reserved.</p>
+              <p className="text-sm text-slate-400">© 2025 Calora. All rights reserved.</p>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <Shield className="h-4 w-4" />
                 <span>Secured with Supabase & RLS</span>
