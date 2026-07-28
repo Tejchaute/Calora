@@ -1,4 +1,4 @@
-import { WorkingHoursPage } from '@/features/working-hours';
+import { WorkingHoursPage } from '@/features/staff';
 
 export default function Page() {
   return <WorkingHoursPage />;
