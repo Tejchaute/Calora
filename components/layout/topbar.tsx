@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/providers/auth-provider';
 import { useTheme } from 'next-themes';
 import { Moon, Sun, Bell, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,10 +30,7 @@ export function DashboardTopbar() {
       <div className="flex-1">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search..."
-            className="pl-10"
-          />
+          <Input placeholder="Search..." className="pl-10" />
         </div>
       </div>
 

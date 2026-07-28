@@ -19,10 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { addMinutes, format } from 'date-fns';
 import type { Service, Staff, Customer, Appointment } from '@/types/database';
+import {
+  getFormOptions,
+  createCustomerInline,
+  createAppointment,
+  updateAppointment,
+} from '../services/appointments.service';
 
 interface AppointmentFormDialogProps {
   open: boolean;
@@ -52,7 +57,6 @@ export function AppointmentFormDialog({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // New customer fields
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
@@ -85,11 +89,7 @@ export function AppointmentFormDialog({
   }, [appointment, open, defaultDate]);
 
   const fetchOptions = async () => {
-    const [{ data: svc }, { data: stf }, { data: cust }] = await Promise.all([
-      supabase.from('services').select('*').eq('status', 'active').order('name'),
-      supabase.from('staff').select('*').eq('status', 'active').order('full_name'),
-      supabase.from('customers').select('*').order('full_name'),
-    ]);
+    const [{ data: svc }, { data: stf }, { data: cust }] = await getFormOptions();
     setServices(svc || []);
     setStaff(stf || []);
     setCustomers(cust || []);
@@ -114,15 +114,11 @@ export function AppointmentFormDialog({
     let finalCustomerId = customerId;
 
     if (!customerId && newCustomerName) {
-      const { data: newCust, error } = await supabase
-        .from('customers')
-        .insert({
-          full_name: newCustomerName,
-          phone: newCustomerPhone,
-          email: newCustomerEmail,
-        })
-        .select()
-        .single();
+      const { data: newCust, error } = await createCustomerInline({
+        full_name: newCustomerName,
+        phone: newCustomerPhone,
+        email: newCustomerEmail,
+      });
       if (error) {
         toast.error('Failed to create customer');
         setSaving(false);
@@ -143,7 +139,7 @@ export function AppointmentFormDialog({
     };
 
     if (appointment) {
-      const { error } = await supabase.from('appointments').update(payload).eq('id', appointment.id);
+      const { error } = await updateAppointment(appointment.id, payload);
       if (error) {
         toast.error('Failed to update appointment');
         setSaving(false);
@@ -151,7 +147,7 @@ export function AppointmentFormDialog({
       }
       toast.success('Appointment updated');
     } else {
-      const { error } = await supabase.from('appointments').insert(payload);
+      const { error } = await createAppointment(payload);
       if (error) {
         toast.error('Failed to create appointment');
         setSaving(false);
@@ -173,7 +169,6 @@ export function AppointmentFormDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Customer */}
           <div className="space-y-2">
             <Label>Customer</Label>
             {customerId ? (
@@ -219,12 +214,7 @@ export function AppointmentFormDialog({
               </div>
             )}
             {customerId === '__select__' && (
-              <Select
-                value=""
-                onValueChange={(v) => {
-                  setCustomerId(v);
-                }}
-              >
+              <Select value="" onValueChange={(v) => setCustomerId(v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select existing customer" />
                 </SelectTrigger>
@@ -239,7 +229,6 @@ export function AppointmentFormDialog({
             )}
           </div>
 
-          {/* Service */}
           <div className="space-y-2">
             <Label>Service</Label>
             <Select value={serviceId} onValueChange={setServiceId}>
@@ -256,7 +245,6 @@ export function AppointmentFormDialog({
             </Select>
           </div>
 
-          {/* Staff */}
           <div className="space-y-2">
             <Label>Staff member</Label>
             <Select value={staffId} onValueChange={setStaffId}>
@@ -274,23 +262,14 @@ export function AppointmentFormDialog({
             </Select>
           </div>
 
-          {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Date</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Start time</Label>
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
           </div>
 
@@ -300,7 +279,6 @@ export function AppointmentFormDialog({
             </div>
           )}
 
-          {/* Status */}
           <div className="space-y-2">
             <Label>Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as Appointment['status'])}>
@@ -316,7 +294,6 @@ export function AppointmentFormDialog({
             </Select>
           </div>
 
-          {/* Notes */}
           <div className="space-y-2">
             <Label>Notes (optional)</Label>
             <Textarea

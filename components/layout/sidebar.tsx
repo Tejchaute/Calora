@@ -2,35 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Calendar,
-  CalendarDays,
-  Users,
-  Scissors,
-  UserCog,
-  Clock,
-  Settings,
-  User,
-  LogOut,
-  CalendarIcon,
-} from 'lucide-react';
+import { LogOut, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
+import { NAV_ITEMS } from '@/config/navigation';
 import { useState } from 'react';
-
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { href: '/dashboard/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/dashboard/customers', label: 'Customers', icon: Users },
-  { href: '/dashboard/services', label: 'Services', icon: Scissors },
-  { href: '/dashboard/staff', label: 'Staff', icon: UserCog },
-  { href: '/dashboard/working-hours', label: 'Working Hours', icon: Clock },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-  { href: '/dashboard/profile', label: 'Profile', icon: User },
-];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -39,7 +16,6 @@ export function DashboardSidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 lg:hidden"
@@ -47,7 +23,6 @@ export function DashboardSidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-slate-900 transition-transform duration-300 lg:translate-x-0',
@@ -95,14 +70,23 @@ export function DashboardSidebar() {
         </div>
       </aside>
 
-      {/* Mobile toggle button — rendered in topbar instead */}
       <button
         onClick={() => setMobileOpen(true)}
         className="fixed left-4 top-3 z-30 lg:hidden"
-        id="sidebar-toggle"
+        aria-label="Open navigation"
       >
-        <svg className="h-6 w-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        <svg
+          className="h-6 w-6 text-slate-900"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
         </svg>
       </button>
     </>
