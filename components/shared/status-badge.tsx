@@ -7,7 +7,7 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <Badge className={STATUS_COLORS[status] ?? 'bg-slate-100 text-slate-800'} variant="secondary">
+    <Badge className={STATUS_COLORS[status] ?? 'bg-muted text-foreground'} variant="secondary">
       {STATUS_LABELS[status] ?? status}
     </Badge>
   );

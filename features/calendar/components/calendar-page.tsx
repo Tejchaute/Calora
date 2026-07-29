@@ -123,8 +123,8 @@ export function CalendarPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Calendar</h1>
-          <p className="mt-1 text-sm text-slate-500">View and manage your schedule.</p>
+          <h1 className="text-2xl font-bold text-foreground">Calendar</h1>
+          <p className="mt-1 text-sm text-muted-foreground">View and manage your schedule.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={view} onValueChange={(v) => setView(v as ViewMode)}>
@@ -162,7 +162,7 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <div className="mb-4 text-center text-lg font-semibold text-slate-900">
+      <div className="mb-4 text-center text-lg font-semibold text-foreground">
         {headerLabel()}
       </div>
 
@@ -235,9 +235,9 @@ function MonthView({
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="grid grid-cols-7 border-b border-slate-200">
+        <div className="grid grid-cols-7 border-b border-border">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-            <div key={d} className="px-2 py-3 text-center text-xs font-semibold text-slate-500">
+            <div key={d} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground">
               {d}
             </div>
           ))}
@@ -251,18 +251,18 @@ function MonthView({
             return (
               <div
                 key={date.toISOString()}
-                className={`min-h-[100px] border-b border-r border-slate-100 p-1.5 ${
-                  inMonth ? 'bg-white' : 'bg-slate-50/50'
+                className={`min-h-[100px] border-b border-r border-border p-1.5 ${
+                  inMonth ? 'bg-background' : 'bg-muted/50'
                 }`}
               >
                 <button
                   onClick={() => onSlotClick(date)}
                   className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                     isToday(date)
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary text-white'
                       : inMonth
-                      ? 'text-slate-700 hover:bg-slate-100'
-                      : 'text-slate-400'
+                      ? 'text-foreground hover:bg-muted'
+                      : 'text-muted-foreground'
                   }`}
                 >
                   {format(date, 'd')}
@@ -272,19 +272,19 @@ function MonthView({
                     <button
                       key={appt.id}
                       onClick={() => onEditAppt(appt)}
-                      className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-xs hover:bg-slate-100"
+                      className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-xs hover:bg-muted"
                     >
                       <div
                         className="h-2 w-2 flex-shrink-0 rounded-full"
                         style={{ backgroundColor: appt.services.color }}
                       />
-                      <span className="truncate text-slate-700">
+                      <span className="truncate text-foreground">
                         {formatTime(appt.start_time)} {appt.customers.full_name}
                       </span>
                     </button>
                   ))}
                   {dayAppts.length > 3 && (
-                    <div className="px-1 text-xs text-slate-500">
+                    <div className="px-1 text-xs text-muted-foreground">
                       +{dayAppts.length - 3} more
                     </div>
                   )}
@@ -319,21 +319,21 @@ function WeekView({
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="grid grid-cols-8 border-b border-slate-200">
-          <div className="border-r border-slate-200 p-3 text-xs font-semibold text-slate-500">
+        <div className="grid grid-cols-8 border-b border-border">
+          <div className="border-r border-border p-3 text-xs font-semibold text-muted-foreground">
             Time
           </div>
           {days.map((date) => (
             <div
               key={date.toISOString()}
-              className="border-r border-slate-200 p-3 text-center last:border-r-0"
+              className="border-r border-border p-3 text-center last:border-r-0"
             >
-              <div className="text-xs font-medium text-slate-500">
+              <div className="text-xs font-medium text-muted-foreground">
                 {format(date, 'EEE')}
               </div>
               <div
                 className={`mt-1 text-lg font-bold ${
-                  isToday(date) ? 'text-blue-600' : 'text-slate-900'
+                  isToday(date) ? 'text-primary' : 'text-foreground'
                 }`}
               >
                 {format(date, 'd')}
@@ -343,8 +343,8 @@ function WeekView({
         </div>
         <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
           {hours.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b border-slate-100">
-              <div className="border-r border-slate-200 p-2 text-xs text-slate-500">
+            <div key={hour} className="grid grid-cols-8 border-b border-border">
+              <div className="border-r border-border p-2 text-xs text-muted-foreground">
                 {formatTime(`${String(hour).padStart(2, '0')}:00`)}
               </div>
               {days.map((date) => {
@@ -356,7 +356,7 @@ function WeekView({
                 return (
                   <div
                     key={date.toISOString()}
-                    className="min-h-[60px] border-r border-slate-100 p-1 last:border-r-0 hover:bg-slate-50"
+                    className="min-h-[60px] border-r border-border p-1 last:border-r-0 hover:bg-muted/50"
                     onClick={() => onSlotClick(date)}
                   >
                     {hourAppts.map((appt) => (
@@ -366,14 +366,14 @@ function WeekView({
                           e.stopPropagation();
                           onEditAppt(appt);
                         }}
-                        className="mb-1 block w-full rounded-md border-l-2 bg-white p-1.5 text-left text-xs shadow-sm hover:shadow-md"
+                        className="mb-1 block w-full rounded-md border-l-2 bg-background p-1.5 text-left text-xs shadow-sm hover:shadow-md"
                         style={{ borderColor: appt.services.color }}
                       >
-                        <div className="font-semibold text-slate-900">
+                        <div className="font-semibold text-foreground">
                           {formatTime(appt.start_time)}
                         </div>
-                        <div className="truncate text-slate-600">{appt.customers.full_name}</div>
-                        <div className="truncate text-slate-400">{appt.services.name}</div>
+                        <div className="truncate text-muted-foreground">{appt.customers.full_name}</div>
+                        <div className="truncate text-muted-foreground">{appt.services.name}</div>
                       </button>
                     ))}
                   </div>
@@ -406,11 +406,11 @@ function DayView({
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="border-b border-slate-200 p-4">
-          <div className="text-sm font-semibold text-slate-900">
+        <div className="border-b border-border p-4">
+          <div className="text-sm font-semibold text-foreground">
             {format(currentDate, 'EEEE, MMMM d')}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-muted-foreground">
             {appointments.length} appointment{appointments.length !== 1 ? 's' : ''}
           </div>
         </div>
@@ -418,10 +418,10 @@ function DayView({
           {hours.map((hour) => (
             <div
               key={hour}
-              className="flex border-b border-slate-100 hover:bg-slate-50"
+              className="flex border-b border-border hover:bg-muted/50"
               onClick={() => onSlotClick(currentDate)}
             >
-              <div className="w-20 flex-shrink-0 border-r border-slate-200 p-3 text-xs font-medium text-slate-500">
+              <div className="w-20 flex-shrink-0 border-r border-border p-3 text-xs font-medium text-muted-foreground">
                 {formatTime(`${String(hour).padStart(2, '0')}:00`)}
               </div>
               <div className="flex-1 p-2">
@@ -434,15 +434,15 @@ function DayView({
                         e.stopPropagation();
                         onEditAppt(appt);
                       }}
-                      className="mb-2 block w-full rounded-lg border-l-4 bg-white p-3 text-left shadow-sm hover:shadow-md"
+                      className="mb-2 block w-full rounded-lg border-l-4 bg-background p-3 text-left shadow-sm hover:shadow-md"
                       style={{ borderColor: appt.services.color }}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-semibold text-slate-900">
+                          <div className="font-semibold text-foreground">
                             {formatTime(appt.start_time)} – {appt.customers.full_name}
                           </div>
-                          <div className="mt-0.5 text-sm text-slate-600">
+                          <div className="mt-0.5 text-sm text-muted-foreground">
                             {appt.services.name} • {appt.staff?.full_name || 'Any staff'}
                           </div>
                         </div>
@@ -457,8 +457,8 @@ function DayView({
           ))}
           {appointments.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <CalendarDays className="h-10 w-10 text-slate-300" />
-              <p className="mt-3 text-sm text-slate-500">No appointments for this day.</p>
+              <CalendarDays className="h-10 w-10 text-muted-foreground/50" />
+              <p className="mt-3 text-sm text-muted-foreground">No appointments for this day.</p>
             </div>
           )}
         </div>

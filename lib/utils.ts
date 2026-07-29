@@ -86,10 +86,10 @@ export function addMinutes(time: string, minutes: number): string {
 }
 
 export const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  pending: 'bg-warning/15 text-warning',
+  confirmed: 'bg-info/15 text-info',
+  completed: 'bg-success/15 text-success',
+  cancelled: 'bg-error/15 text-error',
 };
 
 export const STATUS_LABELS: Record<string, string> = {

@@ -26,10 +26,10 @@ export function DashboardTopbar() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
       <div className="flex-1">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search..." className="pl-10" />
         </div>
       </div>
@@ -50,7 +50,7 @@ export function DashboardTopbar() {
 
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-600" />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
         </Button>
 
         <DropdownMenu>
@@ -58,7 +58,7 @@ export function DashboardTopbar() {
             <button className="flex items-center gap-2 rounded-full pl-1">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || ''} />
-                <AvatarFallback className="bg-blue-100 text-xs font-semibold text-blue-700">
+                <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
                   {getInitials(profile?.full_name || 'U')}
                 </AvatarFallback>
               </Avatar>
@@ -68,7 +68,7 @@ export function DashboardTopbar() {
             <DropdownMenuLabel>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{profile?.full_name || 'User'}</span>
-                <span className="text-xs text-slate-500">{profile?.email}</span>
+                <span className="text-xs text-muted-foreground">{profile?.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -79,7 +79,7 @@ export function DashboardTopbar() {
               <Link href="/dashboard/settings">Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="text-red-600">
+            <DropdownMenuItem onClick={signOut} className="text-destructive">
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

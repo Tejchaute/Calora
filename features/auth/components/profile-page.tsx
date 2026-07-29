@@ -70,15 +70,15 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Profile</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage your personal information and password.</p>
+        <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage your personal information and password.</p>
       </div>
 
       {/* Profile Info */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <User className="h-5 w-5 text-blue-600" />
+            <User className="h-5 w-5 text-primary" />
             Personal Information
           </CardTitle>
         </CardHeader>
@@ -86,7 +86,7 @@ export function ProfilePage() {
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
               <AvatarImage src={avatarUrl} alt={fullName} />
-              <AvatarFallback className="bg-blue-100 text-xl font-semibold text-blue-700">
+              <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">
                 {getInitials(fullName || 'U')}
               </AvatarFallback>
             </Avatar>
@@ -98,7 +98,7 @@ export function ProfilePage() {
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://..."
                 />
-                <Camera className="h-5 w-5 text-slate-400" />
+                <Camera className="h-5 w-5 text-muted-foreground" />
               </div>
             </div>
           </div>
@@ -114,18 +114,18 @@ export function ProfilePage() {
             <div className="space-y-2">
               <Label>Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={profile?.email || user?.email || ''}
                   readOnly
-                  className="bg-slate-50 pl-10"
+                  className="bg-muted/50 pl-10"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -148,7 +148,7 @@ export function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Lock className="h-5 w-5 text-blue-600" />
+            <Lock className="h-5 w-5 text-primary" />
             Change Password
           </CardTitle>
         </CardHeader>

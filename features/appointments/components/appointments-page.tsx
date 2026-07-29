@@ -116,8 +116,8 @@ export function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Appointments</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage all your bookings in one place.</p>
+          <h1 className="text-2xl font-bold text-foreground">Appointments</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage all your bookings in one place.</p>
         </div>
         <Button onClick={() => { setEditAppt(null); setFormOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
@@ -127,7 +127,7 @@ export function AppointmentsPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by customer or service..."
             value={search}
@@ -140,7 +140,7 @@ export function AppointmentsPage() {
           onValueChange={(v) => { setStatusFilter(v); setPage(0); }}
         >
           <SelectTrigger className="w-full sm:w-44">
-            <Filter className="mr-2 h-4 w-4 text-slate-400" />
+            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -184,25 +184,25 @@ export function AppointmentsPage() {
                 </TableHeader>
                 <TableBody>
                   {appointments.map((appt) => (
-                    <TableRow key={appt.id} className="hover:bg-slate-50">
+                    <TableRow key={appt.id} className="hover:bg-muted/50">
                       <TableCell>
-                        <div className="font-medium text-slate-900">{appt.customers.full_name}</div>
-                        <div className="text-xs text-slate-500">{appt.customers.phone || appt.customers.email}</div>
+                        <div className="font-medium text-foreground">{appt.customers.full_name}</div>
+                        <div className="text-xs text-muted-foreground">{appt.customers.phone || appt.customers.email}</div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: appt.services.color }} />
-                          <span className="text-sm text-slate-700">{appt.services.name}</span>
+                          <span className="text-sm text-foreground">{appt.services.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">
+                      <TableCell className="text-sm text-muted-foreground">
                         {appt.staff?.full_name || 'Any staff'}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm font-medium text-slate-900">{formatDate(appt.appointment_date)}</div>
-                        <div className="text-xs text-slate-500">{formatTime(appt.start_time)}</div>
+                        <div className="text-sm font-medium text-foreground">{formatDate(appt.appointment_date)}</div>
+                        <div className="text-xs text-muted-foreground">{formatTime(appt.start_time)}</div>
                       </TableCell>
-                      <TableCell className="text-sm font-medium text-slate-900">
+                      <TableCell className="text-sm font-medium text-foreground">
                         {formatCurrency(appt.services.price)}
                       </TableCell>
                       <TableCell>
@@ -212,21 +212,21 @@ export function AppointmentsPage() {
                         <div className="flex items-center justify-end gap-1">
                           {appt.status === 'pending' && (
                             <>
-                              <button onClick={() => handleStatusChange(appt.id, 'confirmed')} className="rounded p-1.5 text-blue-600 hover:bg-blue-50" title="Confirm">
+                              <button onClick={() => handleStatusChange(appt.id, 'confirmed')} className="rounded p-1.5 text-primary hover:bg-primary/10" title="Confirm">
                                 <CheckCircle2 className="h-4 w-4" />
                               </button>
-                              <button onClick={() => handleStatusChange(appt.id, 'completed')} className="rounded p-1.5 text-green-600 hover:bg-green-50" title="Complete">
+                              <button onClick={() => handleStatusChange(appt.id, 'completed')} className="rounded p-1.5 text-success hover:bg-success/10" title="Complete">
                                 <Clock className="h-4 w-4" />
                               </button>
-                              <button onClick={() => handleStatusChange(appt.id, 'cancelled')} className="rounded p-1.5 text-red-600 hover:bg-red-50" title="Cancel">
+                              <button onClick={() => handleStatusChange(appt.id, 'cancelled')} className="rounded p-1.5 text-destructive hover:bg-destructive/10" title="Cancel">
                                 <XCircle className="h-4 w-4" />
                               </button>
                             </>
                           )}
-                          <button onClick={() => { setEditAppt(appt); setFormOpen(true); }} className="rounded p-1.5 text-slate-600 hover:bg-slate-100" title="Edit">
+                          <button onClick={() => { setEditAppt(appt); setFormOpen(true); }} className="rounded p-1.5 text-muted-foreground hover:bg-muted" title="Edit">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button onClick={() => setDeleteId(appt.id)} className="rounded p-1.5 text-red-600 hover:bg-red-50" title="Delete">
+                          <button onClick={() => setDeleteId(appt.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10" title="Delete">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
@@ -242,7 +242,7 @@ export function AppointmentsPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {page * APPOINTMENTS_PAGE_SIZE + 1}–{Math.min((page + 1) * APPOINTMENTS_PAGE_SIZE, total)} of {total}
           </p>
           <div className="flex gap-2">

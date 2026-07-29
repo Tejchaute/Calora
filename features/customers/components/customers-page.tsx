@@ -169,28 +169,28 @@ export function CustomersPage() {
             <div className="flex items-start gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src="" alt={detailCustomer.full_name} />
-                <AvatarFallback className="bg-blue-100 text-lg font-semibold text-blue-700">
+                <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
                   {getInitials(detailCustomer.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-slate-900">{detailCustomer.full_name}</h2>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600">
+                <h2 className="text-xl font-bold text-foreground">{detailCustomer.full_name}</h2>
+                <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
                   {detailCustomer.email && (
                     <div className="flex items-center gap-1.5">
-                      <Mail className="h-4 w-4 text-slate-400" />
+                      <Mail className="h-4 w-4 text-muted-foreground" />
                       {detailCustomer.email}
                     </div>
                   )}
                   {detailCustomer.phone && (
                     <div className="flex items-center gap-1.5">
-                      <Phone className="h-4 w-4 text-slate-400" />
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       {detailCustomer.phone}
                     </div>
                   )}
                 </div>
                 {detailCustomer.notes && (
-                  <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                  <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                     {detailCustomer.notes}
                   </div>
                 )}
@@ -216,24 +216,24 @@ export function CustomersPage() {
               </div>
             ) : customerAppts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CalendarIcon className="h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">No bookings yet.</p>
+                <CalendarIcon className="h-10 w-10 text-muted-foreground/50" />
+                <p className="mt-3 text-sm text-muted-foreground">No bookings yet.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {customerAppts.map((appt) => (
                   <div
                     key={appt.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-100 p-3"
+                    className="flex items-center gap-3 rounded-lg border border-border p-3"
                   >
                     <div className="h-10 w-1 rounded-full" style={{ backgroundColor: appt.services.color }} />
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-900">{appt.services.name}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-sm font-medium text-foreground">{appt.services.name}</div>
+                      <div className="text-xs text-muted-foreground">
                         {formatDate(appt.appointment_date)} at {formatTime(appt.start_time)} • {appt.staff?.full_name || 'Any staff'}
                       </div>
                     </div>
-                    <div className="text-sm font-medium text-slate-900">
+                    <div className="text-sm font-medium text-foreground">
                       {formatCurrency(appt.services.price)}
                     </div>
                     <StatusBadge status={appt.status} />
@@ -251,8 +251,8 @@ export function CustomersPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Customers</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage your customer database.</p>
+          <h1 className="text-2xl font-bold text-foreground">Customers</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your customer database.</p>
         </div>
         <Button onClick={() => openForm()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -261,7 +261,7 @@ export function CustomersPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search customers..."
           value={search}
@@ -301,34 +301,34 @@ export function CustomersPage() {
                   {customers.map((c) => (
                     <TableRow
                       key={c.id}
-                      className="cursor-pointer hover:bg-slate-50"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={() => openDetail(c)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
-                            <AvatarFallback className="bg-blue-100 text-xs font-semibold text-blue-700">
+                            <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
                               {getInitials(c.full_name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium text-slate-900">{c.full_name}</span>
+                          <span className="font-medium text-foreground">{c.full_name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">{c.phone || '—'}</TableCell>
-                      <TableCell className="text-sm text-slate-600">{c.email || '—'}</TableCell>
-                      <TableCell className="text-sm text-slate-500">{formatDate(c.created_at)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{c.phone || '—'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{c.email || '—'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{formatDate(c.created_at)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); openForm(c); }}
-                            className="rounded p-1.5 text-slate-600 hover:bg-slate-100"
+                            className="rounded p-1.5 text-muted-foreground hover:bg-muted"
                             title="Edit"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
-                            className="rounded p-1.5 text-red-600 hover:bg-red-50"
+                            className="rounded p-1.5 text-destructive hover:bg-destructive/10"
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -346,7 +346,7 @@ export function CustomersPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {page * CUSTOMERS_PAGE_SIZE + 1}–{Math.min((page + 1) * CUSTOMERS_PAGE_SIZE, total)} of {total}
           </p>
           <div className="flex gap-2">

@@ -128,8 +128,8 @@ export function WorkingHoursPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Working Hours</h1>
-          <p className="mt-1 text-sm text-slate-500">Set your weekly schedule, breaks, and holidays.</p>
+          <h1 className="text-2xl font-bold text-foreground">Working Hours</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Set your weekly schedule, breaks, and holidays.</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
@@ -152,7 +152,7 @@ export function WorkingHoursPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Clock className="h-5 w-5 text-blue-600" />
+            <Clock className="h-5 w-5 text-primary" />
             Weekly Schedule
           </CardTitle>
         </CardHeader>
@@ -174,10 +174,10 @@ export function WorkingHoursPage() {
                 return (
                   <div
                     key={day}
-                    className="flex flex-col gap-3 rounded-lg border border-slate-100 p-4 sm:flex-row sm:items-center"
+                    className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center"
                   >
                     <div className="flex items-center justify-between sm:w-32">
-                      <span className="font-medium text-slate-900">{getDayName(day)}</span>
+                      <span className="font-medium text-foreground">{getDayName(day)}</span>
                       <Switch
                         checked={dayHours?.is_open ?? (day !== 0 && day !== 6)}
                         onCheckedChange={(checked) => updateDay(day, { is_open: checked })}
@@ -186,7 +186,7 @@ export function WorkingHoursPage() {
                     {dayHours?.is_open ?? (day !== 0 && day !== 6) ? (
                       <div className="flex flex-1 flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
-                          <Label className="text-xs text-slate-500">Open</Label>
+                          <Label className="text-xs text-muted-foreground">Open</Label>
                           <Input
                             type="time"
                             value={dayHours?.open_time ?? '09:00'}
@@ -195,7 +195,7 @@ export function WorkingHoursPage() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <Label className="text-xs text-slate-500">Close</Label>
+                          <Label className="text-xs text-muted-foreground">Close</Label>
                           <Input
                             type="time"
                             value={dayHours?.close_time ?? '17:00'}
@@ -204,14 +204,14 @@ export function WorkingHoursPage() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <Label className="text-xs text-slate-500">Break</Label>
+                          <Label className="text-xs text-muted-foreground">Break</Label>
                           <Input
                             type="time"
                             value={dayHours?.break_start ?? ''}
                             onChange={(e) => updateDay(day, { break_start: e.target.value || null })}
                             className="w-28"
                           />
-                          <span className="text-slate-400">–</span>
+                          <span className="text-muted-foreground">–</span>
                           <Input
                             type="time"
                             value={dayHours?.break_end ?? ''}
@@ -222,7 +222,7 @@ export function WorkingHoursPage() {
                       </div>
                     ) : (
                       <div className="flex-1">
-                        <span className="text-sm text-slate-400">Closed</span>
+                        <span className="text-sm text-muted-foreground">Closed</span>
                       </div>
                     )}
                   </div>
@@ -237,7 +237,7 @@ export function WorkingHoursPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <CalendarOff className="h-5 w-5 text-blue-600" />
+            <CalendarOff className="h-5 w-5 text-primary" />
             Holidays & Closed Days
           </CardTitle>
           <Button size="sm" onClick={() => setHolidayOpen(true)}>
@@ -254,8 +254,8 @@ export function WorkingHoursPage() {
             </div>
           ) : holidays.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CalendarOff className="h-10 w-10 text-slate-300" />
-              <p className="mt-3 text-sm text-slate-500">No holidays scheduled.</p>
+              <CalendarOff className="h-10 w-10 text-muted-foreground/50" />
+              <p className="mt-3 text-sm text-muted-foreground">No holidays scheduled.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -270,15 +270,15 @@ export function WorkingHoursPage() {
                 <TableBody>
                   {holidays.map((h) => (
                     <TableRow key={h.id}>
-                      <TableCell className="font-medium text-slate-900">
+                      <TableCell className="font-medium text-foreground">
                         {format(parseISO(h.date), 'MMM d, yyyy')}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">{h.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{h.name}</TableCell>
                       <TableCell>
                         <div className="flex justify-end">
                           <button
                             onClick={() => setDeleteHolidayId(h.id)}
-                            className="rounded p-1.5 text-red-600 hover:bg-red-50"
+                            className="rounded p-1.5 text-destructive hover:bg-destructive/10"
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />

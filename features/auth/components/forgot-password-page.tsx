@@ -34,21 +34,21 @@ export function ForgotPasswordPage() {
   return (
     <div>
       <div className="mb-8 flex items-center gap-2 lg:hidden">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-5 w-5 text-white" />
         </div>
-        <span className="text-lg font-semibold text-slate-900">Calora</span>
+        <span className="text-lg font-semibold text-foreground">Calora</span>
       </div>
 
       {sent ? (
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <Mail className="h-6 w-6 text-green-600" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
+            <Mail className="h-6 w-6 text-success" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">Check your inbox</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <h1 className="mt-4 text-2xl font-bold text-foreground">Check your inbox</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {"We've sent a password reset link to "}
-            <span className="font-medium text-slate-900">{email}</span>.
+            <span className="font-medium text-foreground">{email}</span>.
           </p>
           <Link href="/login">
             <Button variant="outline" className="mt-6">
@@ -59,15 +59,15 @@ export function ForgotPasswordPage() {
         </div>
       ) : (
         <>
-          <h1 className="text-2xl font-bold text-slate-900">Reset your password</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <h1 className="text-2xl font-bold text-foreground">Reset your password</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {"Enter your email and we'll send you a link to reset your password."}
           </p>
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -84,9 +84,9 @@ export function ForgotPasswordPage() {
               {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </form>
-          <p className="mt-6 text-center text-sm text-slate-600">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Remember your password?{' '}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/login" className="font-medium text-primary hover:text-primary">
               Sign in
             </Link>
           </p>

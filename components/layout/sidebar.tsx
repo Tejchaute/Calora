@@ -25,12 +25,12 @@ export function DashboardSidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-slate-900 transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+        <div className="flex h-16 items-center gap-2 border-b border-sidebar/50 px-6">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <CalendarIcon className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-semibold text-white">Calora</span>
@@ -47,8 +47,8 @@ export function DashboardSidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-primary text-white'
+                    : 'text-muted-foreground hover:bg-sidebar/80 hover:text-white'
                 )}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -58,11 +58,11 @@ export function DashboardSidebar() {
           })}
         </nav>
 
-        <div className="border-t border-slate-800 p-3">
+        <div className="border-t border-sidebar/50 p-3">
           <Button
             variant="ghost"
             onClick={signOut}
-            className="w-full justify-start text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="w-full justify-start text-muted-foreground hover:bg-sidebar/80 hover:text-white"
           >
             <LogOut className="mr-3 h-5 w-5" />
             Logout
@@ -76,7 +76,7 @@ export function DashboardSidebar() {
         aria-label="Open navigation"
       >
         <svg
-          className="h-6 w-6 text-slate-900"
+          className="h-6 w-6 text-foreground"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

@@ -177,8 +177,8 @@ export function StaffPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Staff</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage your team members and their assigned services.</p>
+          <h1 className="text-2xl font-bold text-foreground">Staff</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your team members and their assigned services.</p>
         </div>
         <Button onClick={() => openForm()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -187,7 +187,7 @@ export function StaffPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search staff..."
           value={search}
@@ -223,28 +223,28 @@ export function StaffPage() {
                 <div className="flex items-start gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={s.avatar_url} alt={s.full_name} />
-                    <AvatarFallback className="bg-blue-100 text-lg font-semibold text-blue-700">
+                    <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
                       {getInitials(s.full_name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-slate-900">{s.full_name}</h3>
-                    {s.role && <p className="text-sm text-slate-500">{s.role}</p>}
+                    <h3 className="text-lg font-semibold text-foreground">{s.full_name}</h3>
+                    {s.role && <p className="text-sm text-muted-foreground">{s.role}</p>}
                     <Badge variant={s.status === 'active' ? 'default' : 'secondary'} className="mt-2">
                       {s.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 </div>
-                <div className="mt-4 space-y-1.5 text-sm text-slate-600">
+                <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
                   {s.email && (
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-slate-400" />
+                      <Mail className="h-4 w-4 text-muted-foreground" />
                       <span className="truncate">{s.email}</span>
                     </div>
                   )}
                   {s.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-slate-400" />
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       {s.phone}
                     </div>
                   )}
@@ -254,7 +254,7 @@ export function StaffPage() {
                     {staffServices[s.id].map((sid) => {
                       const svc = services.find((sv) => sv.id === sid);
                       return svc ? (
-                        <span key={sid} className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                        <span key={sid} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                           <Scissors className="h-3 w-3" />
                           {svc.name}
                         </span>
@@ -267,7 +267,7 @@ export function StaffPage() {
                     <Edit className="mr-2 h-3.5 w-3.5" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-red-600 hover:bg-red-50">
+                  <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-destructive hover:bg-destructive/10">
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -312,9 +312,9 @@ export function StaffPage() {
             </div>
             <div className="space-y-2">
               <Label>Assigned services</Label>
-              <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-3 scrollbar-thin">
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-border p-3 scrollbar-thin">
                 {services.length === 0 ? (
-                  <p className="text-sm text-slate-500">No services available. Add services first.</p>
+                  <p className="text-sm text-muted-foreground">No services available. Add services first.</p>
                 ) : (
                   services.map((s) => (
                     <div key={s.id} className="flex items-center space-x-2">
@@ -323,7 +323,7 @@ export function StaffPage() {
                         checked={selectedServices.includes(s.id)}
                         onCheckedChange={() => toggleService(s.id)}
                       />
-                      <label htmlFor={`svc-${s.id}`} className="flex-1 text-sm text-slate-700">
+                      <label htmlFor={`svc-${s.id}`} className="flex-1 text-sm text-foreground">
                         {s.name} • {s.duration}min
                       </label>
                     </div>

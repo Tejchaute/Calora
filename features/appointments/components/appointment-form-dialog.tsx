@@ -185,7 +185,7 @@ export function AppointmentFormDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+              <div className="space-y-2 rounded-lg border border-border p-3">
                 <Input
                   placeholder="Customer name *"
                   value={newCustomerName}
@@ -206,7 +206,7 @@ export function AppointmentFormDialog({
                 {customers.length > 0 && (
                   <button
                     onClick={() => setCustomerId('__select__')}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                    className="text-xs font-medium text-primary hover:text-primary"
                   >
                     Or select an existing customer
                   </button>
@@ -274,7 +274,7 @@ export function AppointmentFormDialog({
           </div>
 
           {selectedService && (
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
               Duration: {selectedService.duration} min • Ends at {endTime}
             </div>
           )}

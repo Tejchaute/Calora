@@ -78,15 +78,15 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">Configure your business information and preferences.</p>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Configure your business information and preferences.</p>
       </div>
 
       {/* Business Info */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Building2 className="h-5 w-5 text-blue-600" />
+            <Building2 className="h-5 w-5 text-primary" />
             Business Information
           </CardTitle>
         </CardHeader>
@@ -142,7 +142,7 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Globe className="h-5 w-5 text-blue-600" />
+            <Globe className="h-5 w-5 text-primary" />
             Regional Settings
           </CardTitle>
         </CardHeader>
@@ -150,7 +150,7 @@ export function SettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-slate-400" />
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
                 Currency
               </Label>
               <Select
@@ -195,7 +195,7 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <LinkIcon className="h-5 w-5 text-blue-600" />
+            <LinkIcon className="h-5 w-5 text-primary" />
             Booking Page
           </CardTitle>
         </CardHeader>
@@ -206,7 +206,7 @@ export function SettingsPage() {
               <Input
                 value={bookingUrl}
                 readOnly
-                className="flex-1 bg-slate-50"
+                className="flex-1 bg-muted/50"
               />
               <Button
                 type="button"
@@ -221,7 +221,7 @@ export function SettingsPage() {
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Share this link with your customers so they can book appointments online.
             </p>
           </div>

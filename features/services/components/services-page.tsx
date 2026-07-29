@@ -147,8 +147,8 @@ export function ServicesPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Services</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage the services your business offers.</p>
+          <h1 className="text-2xl font-bold text-foreground">Services</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage the services your business offers.</p>
         </div>
         <Button onClick={() => openForm()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -157,7 +157,7 @@ export function ServicesPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search services..."
           value={search}
@@ -202,17 +202,17 @@ export function ServicesPage() {
                     {s.status === 'active' ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-slate-900">{s.name}</h3>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">{s.name}</h3>
                 {s.description && (
-                  <p className="mt-1 text-sm text-slate-500 line-clamp-2">{s.description}</p>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{s.description}</p>
                 )}
-                <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
+                <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-slate-400" />
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                     {s.duration} min
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-slate-400" />
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
                     {formatCurrency(s.price)}
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export function ServicesPage() {
                     <Edit className="mr-2 h-3.5 w-3.5" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-red-600 hover:bg-red-50">
+                  <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-destructive hover:bg-destructive/10">
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -265,7 +265,7 @@ export function ServicesPage() {
                     type="button"
                     onClick={() => setColor(c)}
                     className={`h-8 w-8 rounded-full transition-transform ${
-                      color === c ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : ''
+                      color === c ? 'ring-2 ring-offset-2 ring-muted-foreground/50 scale-110' : ''
                     }`}
                     style={{ backgroundColor: c }}
                   />

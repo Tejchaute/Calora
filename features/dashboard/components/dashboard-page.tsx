@@ -83,9 +83,9 @@ export function DashboardPage() {
   };
 
   const statCards = [
-    { label: "Today's Appointments", value: stats?.todayAppointments ?? 0, icon: Calendar, iconColor: 'text-blue-600', iconBg: 'bg-blue-50' },
+    { label: "Today's Appointments", value: stats?.todayAppointments ?? 0, icon: Calendar, iconColor: 'text-primary', iconBg: 'bg-primary/10' },
     { label: 'Upcoming Appointments', value: stats?.upcomingAppointments ?? 0, icon: Clock, iconColor: 'text-purple-600', iconBg: 'bg-purple-50' },
-    { label: 'Total Customers', value: stats?.totalCustomers ?? 0, icon: Users, iconColor: 'text-green-600', iconBg: 'bg-green-50' },
+    { label: 'Total Customers', value: stats?.totalCustomers ?? 0, icon: Users, iconColor: 'text-success', iconBg: 'bg-success/10' },
     { label: 'Total Services', value: stats?.totalServices ?? 0, icon: Scissors, iconColor: 'text-orange-600', iconBg: 'bg-orange-50' },
     { label: 'Total Staff', value: stats?.totalStaff ?? 0, icon: UserCog, iconColor: 'text-teal-600', iconBg: 'bg-teal-50' },
   ];
@@ -94,8 +94,8 @@ export function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {format(new Date(), 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
@@ -163,7 +163,7 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle className="text-base font-semibold">Today's Appointments</CardTitle>
             <Link href="/dashboard/appointments">
-              <Button variant="ghost" size="sm" className="text-blue-600">
+              <Button variant="ghost" size="sm" className="text-primary">
                 View all <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
@@ -177,8 +177,8 @@ export function DashboardPage() {
               </div>
             ) : todayAppts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Calendar className="h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">No appointments scheduled for today.</p>
+                <Calendar className="h-10 w-10 text-muted-foreground/50" />
+                <p className="mt-3 text-sm text-muted-foreground">No appointments scheduled for today.</p>
                 <Link href="/dashboard/appointments?new=true">
                   <Button variant="outline" size="sm" className="mt-4">
                     <Plus className="mr-2 h-4 w-4" />
@@ -191,21 +191,21 @@ export function DashboardPage() {
                 {todayAppts.map((appt) => (
                   <div
                     key={appt.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
+                    className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
                   >
                     <div className="flex w-16 flex-col items-center text-sm">
-                      <div className="font-semibold text-slate-900">{formatTime(appt.start_time)}</div>
-                      <div className="text-xs text-slate-400">{appt.services.duration}min</div>
+                      <div className="font-semibold text-foreground">{formatTime(appt.start_time)}</div>
+                      <div className="text-xs text-muted-foreground">{appt.services.duration}min</div>
                     </div>
                     <div
                       className="h-10 w-1 rounded-full"
                       style={{ backgroundColor: appt.services.color }}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-slate-900">
+                      <div className="truncate text-sm font-medium text-foreground">
                         {appt.customers.full_name}
                       </div>
-                      <div className="truncate text-xs text-slate-500">
+                      <div className="truncate text-xs text-muted-foreground">
                         {appt.services.name} • {appt.staff?.full_name || 'Any staff'}
                       </div>
                     </div>
@@ -214,14 +214,14 @@ export function DashboardPage() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => handleQuickStatus(appt.id, 'completed')}
-                          className="rounded p-1 text-green-600 hover:bg-green-50"
+                          className="rounded p-1 text-success hover:bg-success/10"
                           title="Mark completed"
                         >
                           <CheckCircle2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleQuickStatus(appt.id, 'cancelled')}
-                          className="rounded p-1 text-red-600 hover:bg-red-50"
+                          className="rounded p-1 text-destructive hover:bg-destructive/10"
                           title="Cancel"
                         >
                           <XCircle className="h-4 w-4" />
@@ -239,7 +239,7 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle className="text-base font-semibold">Upcoming Appointments</CardTitle>
             <Link href="/dashboard/calendar">
-              <Button variant="ghost" size="sm" className="text-blue-600">
+              <Button variant="ghost" size="sm" className="text-primary">
                 View calendar <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
@@ -253,31 +253,31 @@ export function DashboardPage() {
               </div>
             ) : upcomingAppts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Clock className="h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">No upcoming appointments.</p>
+                <Clock className="h-10 w-10 text-muted-foreground/50" />
+                <p className="mt-3 text-sm text-muted-foreground">No upcoming appointments.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {upcomingAppts.map((appt) => (
                   <div
                     key={appt.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50"
+                    className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
                   >
                     <div className="flex w-20 flex-col text-sm">
-                      <div className="font-semibold text-slate-900">
+                      <div className="font-semibold text-foreground">
                         {formatDate(appt.appointment_date)}
                       </div>
-                      <div className="text-xs text-slate-400">{formatTime(appt.start_time)}</div>
+                      <div className="text-xs text-muted-foreground">{formatTime(appt.start_time)}</div>
                     </div>
                     <div
                       className="h-10 w-1 rounded-full"
                       style={{ backgroundColor: appt.services.color }}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-slate-900">
+                      <div className="truncate text-sm font-medium text-foreground">
                         {appt.customers.full_name}
                       </div>
-                      <div className="truncate text-xs text-slate-500">
+                      <div className="truncate text-xs text-muted-foreground">
                         {appt.services.name} • {appt.staff?.full_name || 'Any staff'}
                       </div>
                     </div>

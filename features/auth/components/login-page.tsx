@@ -36,20 +36,20 @@ export function LoginPage() {
   return (
     <div>
       <div className="mb-8 flex items-center gap-2 lg:hidden">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-5 w-5 text-white" />
         </div>
-        <span className="text-lg font-semibold text-slate-900">Calora</span>
+        <span className="text-lg font-semibold text-foreground">Calora</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
-      <p className="mt-2 text-sm text-slate-600">Sign in to your account to continue.</p>
+      <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Sign in to your account to continue.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="email"
               type="email"
@@ -66,13 +66,13 @@ export function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-blue-600 hover:text-blue-700"
+              className="text-xs font-medium text-primary hover:text-primary"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="password"
               type="password"
@@ -90,9 +90,9 @@ export function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         {"Don't have an account? "}
-        <Link href="/register" className="font-medium text-blue-600 hover:text-blue-700">
+        <Link href="/register" className="font-medium text-primary hover:text-primary">
           Sign up free
         </Link>
       </p>

@@ -15,8 +15,8 @@ export function StatCard({
   label,
   value,
   icon: Icon,
-  iconColor = 'text-blue-600',
-  iconBg = 'bg-blue-50',
+  iconColor = 'text-primary',
+  iconBg = 'bg-primary/10',
   loading,
 }: StatCardProps) {
   if (loading) {
@@ -37,8 +37,8 @@ export function StatCard({
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
           <Icon className={`h-6 w-6 ${iconColor}`} />
         </div>
-        <div className="mt-4 text-3xl font-bold text-slate-900">{value}</div>
-        <div className="mt-1 text-sm text-slate-500">{label}</div>
+        <div className="mt-4 text-3xl font-bold text-foreground">{value}</div>
+        <div className="mt-1 text-sm text-muted-foreground">{label}</div>
       </CardContent>
     </Card>
   );
