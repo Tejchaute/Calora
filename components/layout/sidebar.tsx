@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LucideIcon, Menu, X } from 'lucide-react';
-import { ComponentType, ReactNode, useState, useCallback } from 'react';
+import { Menu, X } from 'lucide-react';
+import { ComponentType, ReactNode, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +21,7 @@ export interface SidebarProps {
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
   onNavItemClick?: () => void;
+  activePath?: string;
 }
 
 export function Sidebar({
@@ -31,13 +31,14 @@ export function Sidebar({
   mobileOpen,
   onMobileOpenChange,
   onNavItemClick,
+  activePath,
 }: SidebarProps) {
-  const pathname = usePathname();
   const closeMobile = useCallback(() => onMobileOpenChange(false), [onMobileOpenChange]);
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === href;
-    return pathname.startsWith(href);
+    if (!activePath) return false;
+    if (href === '/dashboard') return activePath === href;
+    return activePath.startsWith(href);
   };
 
   const renderNavItem = (item: NavItem, isNested = false) => {
