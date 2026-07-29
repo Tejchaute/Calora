@@ -2,93 +2,130 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, CalendarIcon } from 'lucide-react';
+import { LucideIcon, Menu, X } from 'lucide-react';
+import { ComponentType, ReactNode, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
-import { NAV_ITEMS } from '@/config/navigation';
-import { useState } from 'react';
 
-export function DashboardSidebar() {
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  badge?: ReactNode;
+  children?: NavItem[];
+}
+
+export interface SidebarProps {
+  navItems: NavItem[];
+  logo?: ReactNode;
+  footer?: ReactNode;
+  mobileOpen: boolean;
+  onMobileOpenChange: (open: boolean) => void;
+  onNavItemClick?: () => void;
+}
+
+export function Sidebar({
+  navItems,
+  logo,
+  footer,
+  mobileOpen,
+  onMobileOpenChange,
+  onNavItemClick,
+}: SidebarProps) {
   const pathname = usePathname();
-  const { signOut } = useAuth();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = useCallback(() => onMobileOpenChange(false), [onMobileOpenChange]);
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === href;
+    return pathname.startsWith(href);
+  };
+
+  const renderNavItem = (item: NavItem, isNested = false) => {
+    const active = isActive(item.href);
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          onClick={() => {
+            onNavItemClick?.();
+            closeMobile();
+          }}
+          aria-current={active ? 'page' : undefined}
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+            isNested && 'ml-6 pl-3',
+            active
+              ? 'bg-primary text-primary-foreground'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground'
+          )}
+        >
+          <item.icon className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1 truncate">{item.label}</span>
+          {item.badge && <span className="ml-auto">{item.badge}</span>}
+        </Link>
+        {item.children && item.children.length > 0 && (
+          <ul className="mt-1 space-y-1">{item.children.map((child) => renderNavItem(child, true))}</ul>
+        )}
+      </li>
+    );
+  };
 
   return (
     <>
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          aria-hidden="true"
+          onClick={closeMobile}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar transition-transform duration-300 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        aria-label="Sidebar navigation"
       >
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar/50 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <CalendarIcon className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-semibold text-white">Calora</span>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-primary text-white'
-                    : 'text-muted-foreground hover:bg-sidebar/80 hover:text-white'
-                )}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-sidebar/50 p-3">
+        <div className="flex h-16 items-center justify-between gap-2 border-b border-sidebar-foreground/10 px-6">
+          {logo ?? <span className="text-lg font-semibold text-sidebar-foreground">Calora</span>}
           <Button
             variant="ghost"
-            onClick={signOut}
-            className="w-full justify-start text-muted-foreground hover:bg-sidebar/80 hover:text-white"
+            size="icon"
+            className="text-sidebar-foreground/70 hover:text-sidebar-foreground lg:hidden"
+            onClick={closeMobile}
+            aria-label="Close navigation"
           >
-            <LogOut className="mr-3 h-5 w-5" />
-            Logout
+            <X className="h-5 w-5" />
           </Button>
         </div>
-      </aside>
 
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-3 z-30 lg:hidden"
-        aria-label="Open navigation"
-      >
-        <svg
-          className="h-6 w-6 text-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin" aria-label="Main navigation">
+          <ul className="space-y-1">{navItems.map((item) => renderNavItem(item))}</ul>
+        </nav>
+
+        {footer && <div className="border-t border-sidebar-foreground/10 p-3">{footer}</div>}
+      </aside>
     </>
+  );
+}
+
+export function SidebarToggle({
+  onClick,
+  className,
+}: {
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      aria-label="Open navigation"
+      className={cn('text-foreground', className)}
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
   );
 }

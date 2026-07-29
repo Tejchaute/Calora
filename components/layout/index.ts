@@ -1,4 +1,12 @@
-export { DashboardSidebar } from './sidebar';
-export { DashboardTopbar } from './topbar';
+export { Sidebar, SidebarToggle } from './sidebar';
+export type { NavItem, SidebarProps } from './sidebar';
+export { Topbar } from './topbar';
+export type { TopbarProps } from './topbar';
 export { DashboardShell } from './dashboard-shell';
+export type { DashboardShellProps } from './dashboard-shell';
 export { AuthShell } from './auth-shell';
+export { PublicLayout } from './public-layout';
+export { PageContainer, PageContent, PageActions } from './page-container';
+export { Section, SectionHeader, SectionContent } from './section';
+export { Breadcrumb } from './breadcrumb';
+export type { BreadcrumbItem } from './breadcrumb';
