@@ -3,39 +3,60 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { toast } from 'sonner';
+
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/shared/loading-button';
+import { InlineAlert } from '@/components/shared/inline-alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { resetPassword } from '../services/auth.service';
+import { AuthError } from '@/lib/auth/errors';
+
+const forgotPasswordSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+});
+
+type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email');
-      return;
+  const form = useForm<ForgotPasswordValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+  });
+
+  const onSubmit = async (values: ForgotPasswordValues) => {
+    setAuthError(null);
+    try {
+      await resetPassword(values.email, `${window.location.origin}/reset-password`);
+      setSubmittedEmail(values.email);
+      setSent(true);
+      toast.success('Password reset link sent.');
+    } catch (err) {
+      const message = err instanceof AuthError ? err.message : 'An unexpected error occurred.';
+      setAuthError(message);
     }
-    setLoading(true);
-    const { error } = await resetPassword(email, `${window.location.origin}/reset-password`);
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-    setSent(true);
-    setLoading(false);
   };
 
   return (
     <div>
       <div className="mb-8 flex items-center gap-2 lg:hidden">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-          <Calendar className="h-5 w-5 text-white" />
+          <Calendar className="h-5 w-5 text-primary-foreground" />
         </div>
         <span className="text-lg font-semibold text-foreground">Calora</span>
       </div>
@@ -48,7 +69,10 @@ export function ForgotPasswordPage() {
           <h1 className="mt-4 text-2xl font-bold text-foreground">Check your inbox</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {"We've sent a password reset link to "}
-            <span className="font-medium text-foreground">{email}</span>.
+            <span className="font-medium text-foreground">{submittedEmail}</span>.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            If you don't see it, check your spam folder.
           </p>
           <Link href="/login">
             <Button variant="outline" className="mt-6">
@@ -63,27 +87,46 @@ export function ForgotPasswordPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             {"Enter your email and we'll send you a link to reset your password."}
           </p>
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  autoComplete="email"
-                />
-              </div>
+
+          {authError && (
+            <div className="mt-4">
+              <InlineAlert variant="error">{authError}</InlineAlert>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Sending...' : 'Send reset link'}
-              {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
-          </form>
+          )}
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email address</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder="you@example.com"
+                          className="pl-10"
+                          autoComplete="email"
+                          aria-describedby={undefined}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <LoadingButton type="submit" className="w-full" loading={form.formState.isSubmitting}>
+                Send reset link
+                {!form.formState.isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+              </LoadingButton>
+            </form>
+          </Form>
+
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Remember your password?{' '}
             <Link href="/login" className="font-medium text-primary hover:text-primary">

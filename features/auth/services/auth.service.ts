@@ -4,28 +4,43 @@ import { getCurrentSession, refreshSession } from '@/lib/auth/session';
 import type { Profile } from '@/types/database';
 
 export async function signIn(email: string, password: string) {
-  return supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw AuthError.fromSupabaseError(error);
+  return data;
 }
 
 export async function signUp(email: string, password: string, fullName: string) {
-  return supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName } },
   });
+  if (error) throw AuthError.fromSupabaseError(error);
+  return data;
 }
 
 export async function createProfile(userId: string, fullName: string, email: string) {
-  return supabase.from('profiles').insert({
+  const { error } = await supabase.from('profiles').insert({
     id: userId,
     full_name: fullName,
     email,
     role: 'admin',
   });
+  if (error) throw AuthError.fromSupabaseError(error);
 }
 
 export async function resetPassword(email: string, redirectTo: string) {
-  return supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw AuthError.fromSupabaseError(error);
+}
+
+export async function resendVerificationEmail(email: string, redirectTo: string) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: redirectTo },
+  });
+  if (error) throw AuthError.fromSupabaseError(error);
 }
 
 export async function signOut() {

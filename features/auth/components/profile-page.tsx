@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/providers/auth-provider';
-import { updateProfile, updatePassword } from '../services/profile.service';
+import { updateProfile } from '../services/profile.service';
+import { updatePassword } from '../services/auth.service';
 import { getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -26,13 +27,14 @@ export function ProfilePage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     setSavingProfile(true);
-    const { error } = await updateProfile(user.id, {
-      full_name: fullName,
-      phone,
-      avatar_url: avatarUrl,
-    });
-    if (error) {
-      toast.error('Failed to update profile');
+    try {
+      await updateProfile(user.id, {
+        full_name: fullName,
+        phone,
+        avatar_url: avatarUrl,
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
       setSavingProfile(false);
       return;
     }
@@ -55,9 +57,10 @@ export function ProfilePage() {
       return;
     }
     setSavingPassword(true);
-    const { error } = await updatePassword(newPassword);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await updatePassword(newPassword);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update password');
       setSavingPassword(false);
       return;
     }
