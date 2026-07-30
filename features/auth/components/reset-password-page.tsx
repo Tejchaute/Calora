@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Calendar, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +22,7 @@ import {
 } from '@/components/ui/form';
 import { updatePassword } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
+import { AUTH_ROUTES } from '@/lib/auth/redirects';
 
 const resetPasswordSchema = z
   .object({
@@ -49,7 +49,6 @@ const PASSWORD_REQUIREMENTS = [
 ];
 
 export function ResetPasswordPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -98,7 +97,7 @@ export function ResetPasswordPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Your password has been changed successfully. You can now sign in with your new password.
           </p>
-          <Link href="/login">
+          <Link href={AUTH_ROUTES.login}>
             <Button className="mt-6 w-full">
               Continue to sign in
               <ArrowRight className="ml-2 h-4 w-4" />

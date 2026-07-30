@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Calendar, MailCheck, MailWarning, ArrowRight, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Calendar, MailCheck, MailWarning, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,10 @@ import { LoadingButton } from '@/components/shared/loading-button';
 import { InlineAlert } from '@/components/shared/inline-alert';
 import { resendVerificationEmail } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
+import { AUTH_ROUTES } from '@/lib/auth/redirects';
 
 export function VerifyEmailPage() {
   const params = useSearchParams();
-  const router = useRouter();
   const status = params.get('status');
   const email = params.get('email') ?? '';
 
@@ -32,7 +32,7 @@ export function VerifyEmailPage() {
     setResending(true);
     setAuthError(null);
     try {
-      await resendVerificationEmail(email, `${window.location.origin}/dashboard`);
+      await resendVerificationEmail(email, `${window.location.origin}${AUTH_ROUTES.dashboard}`);
       setResent(true);
       toast.success('Verification email sent.');
     } catch (err) {

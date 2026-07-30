@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { signIn } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
+import { AUTH_ROUTES, getLoginRedirectUrl } from '@/lib/auth/redirects';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -34,6 +35,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -47,7 +49,7 @@ export function LoginPage() {
     try {
       await signIn(values.email, values.password);
       toast.success('Welcome back!');
-      router.push('/dashboard');
+      router.push(getLoginRedirectUrl(searchParams));
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'An unexpected error occurred.';
       setAuthError(message);
@@ -106,7 +108,7 @@ export function LoginPage() {
                 <div className="flex items-center justify-between">
                   <FormLabel>Password</FormLabel>
                   <Link
-                    href="/forgot-password"
+                    href={AUTH_ROUTES.forgotPassword}
                     className="text-xs font-medium text-primary hover:text-primary"
                   >
                     Forgot password?
@@ -166,7 +168,7 @@ export function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {"Don't have an account? "}
-        <Link href="/register" className="font-medium text-primary hover:text-primary">
+        <Link href={AUTH_ROUTES.register} className="font-medium text-primary hover:text-primary">
           Sign up free
         </Link>
       </p>

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/form';
 import { signUp, createProfile } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
+import { AUTH_ROUTES } from '@/lib/auth/redirects';
 
 const registerSchema = z
   .object({
@@ -76,8 +77,13 @@ export function RegisterPage() {
       if (data.user) {
         await createProfile(data.user.id, values.fullName, values.email);
       }
-      toast.success('Account created! Welcome to Calora.');
-      router.push('/dashboard');
+      if (data.session) {
+        toast.success('Account created! Welcome to Calora.');
+        router.push(AUTH_ROUTES.dashboard);
+      } else {
+        toast.success('Account created! Please check your email to verify your account.');
+        router.push(`${AUTH_ROUTES.verifyEmail}?email=${encodeURIComponent(values.email)}`);
+      }
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'An unexpected error occurred.';
       setAuthError(message);
@@ -244,7 +250,7 @@ export function RegisterPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-primary hover:text-primary">
+        <Link href={AUTH_ROUTES.login} className="font-medium text-primary hover:text-primary">
           Sign in
         </Link>
       </p>

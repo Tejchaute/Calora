@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/form';
 import { resetPassword } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
+import { AUTH_ROUTES } from '@/lib/auth/redirects';
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -42,7 +43,7 @@ export function ForgotPasswordPage() {
   const onSubmit = async (values: ForgotPasswordValues) => {
     setAuthError(null);
     try {
-      await resetPassword(values.email, `${window.location.origin}/reset-password`);
+      await resetPassword(values.email, `${window.location.origin}${AUTH_ROUTES.resetPassword}`);
       setSubmittedEmail(values.email);
       setSent(true);
       toast.success('Password reset link sent.');
@@ -74,7 +75,7 @@ export function ForgotPasswordPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             If you don't see it, check your spam folder.
           </p>
-          <Link href="/login">
+          <Link href={AUTH_ROUTES.login}>
             <Button variant="outline" className="mt-6">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to sign in
@@ -129,7 +130,7 @@ export function ForgotPasswordPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Remember your password?{' '}
-            <Link href="/login" className="font-medium text-primary hover:text-primary">
+            <Link href={AUTH_ROUTES.login} className="font-medium text-primary hover:text-primary">
               Sign in
             </Link>
           </p>
