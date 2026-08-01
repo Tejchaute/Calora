@@ -226,7 +226,7 @@ export function CustomersPage() {
                     key={appt.id}
                     className="flex items-center gap-3 rounded-lg border border-border p-3"
                   >
-                    <div className="h-10 w-1 rounded-full" style={{ backgroundColor: appt.services.color }} />
+                    <div className="h-10 w-1 rounded-full" style={{ backgroundColor: appt.services.color || undefined }} />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-foreground">{appt.services.name}</div>
                       <div className="text-xs text-muted-foreground">

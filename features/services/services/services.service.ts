@@ -10,7 +10,7 @@ export async function getServices(search?: string) {
 }
 
 export async function createService(
-  payload: Omit<Service, 'id' | 'created_at' | 'updated_at'>
+  payload: Partial<Omit<Service, 'id' | 'created_at' | 'updated_at'>>
 ) {
   return supabase.from('services').insert(payload);
 }

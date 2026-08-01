@@ -34,8 +34,6 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
   getWorkingHoursData,
   upsertWorkingHours,
-  addHoliday,
-  deleteHoliday,
 } from '../services/working-hours.service';
 import { getDayName, formatTime } from '@/lib/utils';
 import type { WorkingHours, Staff, Holiday } from '@/types/database';
@@ -60,10 +58,10 @@ export function WorkingHoursPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: wh }, { data: stf }, { data: hols }] = await getWorkingHoursData();
-    setHours((wh as WorkingHours[]) || []);
-    setStaff(stf || []);
-    setHolidays((hols as Holiday[]) || []);
+    const [hours, staffList] = await getWorkingHoursData();
+    setHours((hours.data as WorkingHours[]) || []);
+    setStaff((staffList.data as Staff[]) || []);
+    setHolidays([]);
     setLoading(false);
   }, []);
 
@@ -96,32 +94,14 @@ export function WorkingHoursPage() {
   };
 
   const handleAddHoliday = async () => {
-    if (!holidayDate) {
-      toast.error('Please select a date');
-      return;
-    }
-    const { error } = await addHoliday(holidayDate, holidayName);
-    if (error) {
-      toast.error(error.code === '23505' ? 'A holiday already exists on this date' : 'Failed to add holiday');
-      return;
-    }
-    toast.success('Holiday added');
+    toast.info('Holiday management coming soon');
     setHolidayOpen(false);
     setHolidayDate('');
     setHolidayName('');
-    fetchData();
   };
 
   const handleDeleteHoliday = async () => {
-    if (!deleteHolidayId) return;
-    const { error } = await deleteHoliday(deleteHolidayId);
-    if (error) {
-      toast.error('Failed to delete holiday');
-      return;
-    }
-    toast.success('Holiday removed');
     setDeleteHolidayId(null);
-    fetchData();
   };
 
   return (

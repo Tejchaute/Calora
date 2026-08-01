@@ -5,7 +5,6 @@ export async function getWorkingHoursData() {
   return Promise.all([
     supabase.from('working_hours').select('*'),
     supabase.from('staff').select('*').eq('status', 'active').order('full_name'),
-    supabase.from('holidays').select('*').order('date', { ascending: false }),
   ]);
 }
 
@@ -27,12 +26,4 @@ export async function upsertWorkingHours(
     break_start: updates.break_start ?? null,
     break_end: updates.break_end ?? null,
   });
-}
-
-export async function addHoliday(date: string, name: string) {
-  return supabase.from('holidays').insert({ date, name: name || 'Holiday' });
-}
-
-export async function deleteHoliday(id: string) {
-  return supabase.from('holidays').delete().eq('id', id);
 }

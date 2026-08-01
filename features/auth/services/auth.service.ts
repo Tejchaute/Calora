@@ -24,7 +24,6 @@ export async function createProfile(userId: string, fullName: string, email: str
     id: userId,
     full_name: fullName,
     email,
-    role: 'admin',
   });
   if (error) throw AuthError.fromSupabaseError(error);
 }

@@ -1,15 +1,38 @@
 import { supabase } from '@/lib/supabase/client';
-import type { Appointment } from '@/types/database';
-import { format, isSameDay } from 'date-fns';
+import type { Appointment, BusinessSettings } from '@/types/database';
+import { format } from 'date-fns';
 
 export async function getBookingInitialData() {
-  return Promise.all([
+  const [services, staff, business, branding, workingHours] = await Promise.all([
     supabase.from('services').select('*').eq('status', 'active').order('name'),
     supabase.from('staff').select('*').eq('status', 'active').order('full_name'),
-    supabase.from('business_settings').select('*').maybeSingle(),
+    supabase.from('businesses').select('id, name, slug').limit(1).maybeSingle(),
+    supabase.from('branding_settings').select('*').limit(1).maybeSingle(),
     supabase.from('working_hours').select('*'),
-    supabase.from('holidays').select('*'),
   ]);
+
+  const settings: BusinessSettings | null = business.data
+    ? {
+        id: branding.data?.id || business.data.id,
+        business_id: business.data.id,
+        business_name: business.data.name,
+        logo_url: branding.data?.logo_url || '',
+        phone: '',
+        email: '',
+        address: '',
+        currency: 'USD',
+        timezone: 'UTC',
+        booking_page_slug: business.data.slug || '',
+      }
+    : null;
+
+  return {
+    services,
+    staff,
+    businessSettings: { data: settings, error: null as any },
+    workingHours,
+    holidays: { data: [] as any[], error: null as any },
+  };
 }
 
 export async function getBookedSlotsForDate(date: Date, staffId?: string | null) {
@@ -40,7 +63,7 @@ export async function findOrCreateCustomer(payload: {
       .select('id')
       .or(orParts.join(','))
       .maybeSingle();
-    if (existing) return { id: existing.id as string, error: null };
+    if (existing) return { id: existing.id as string, error: null as any };
   }
 
   const { data, error } = await supabase.from('customers').insert(payload).select().single();
@@ -48,7 +71,7 @@ export async function findOrCreateCustomer(payload: {
 }
 
 export async function createBooking(
-  payload: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>
+  payload: Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at'>>
 ) {
   return supabase.from('appointments').insert(payload);
 }

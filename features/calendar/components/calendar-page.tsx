@@ -276,7 +276,7 @@ function MonthView({
                     >
                       <div
                         className="h-2 w-2 flex-shrink-0 rounded-full"
-                        style={{ backgroundColor: appt.services.color }}
+                        style={{ backgroundColor: appt.services.color || undefined }}
                       />
                       <span className="truncate text-foreground">
                         {formatTime(appt.start_time)} {appt.customers.full_name}
@@ -367,7 +367,7 @@ function WeekView({
                           onEditAppt(appt);
                         }}
                         className="mb-1 block w-full rounded-md border-l-2 bg-background p-1.5 text-left text-xs shadow-sm hover:shadow-md"
-                        style={{ borderColor: appt.services.color }}
+                        style={{ borderColor: appt.services.color || undefined }}
                       >
                         <div className="font-semibold text-foreground">
                           {formatTime(appt.start_time)}
@@ -435,7 +435,7 @@ function DayView({
                         onEditAppt(appt);
                       }}
                       className="mb-2 block w-full rounded-lg border-l-4 bg-background p-3 text-left shadow-sm hover:shadow-md"
-                      style={{ borderColor: appt.services.color }}
+                      style={{ borderColor: appt.services.color || undefined }}
                     >
                       <div className="flex items-center justify-between">
                         <div>

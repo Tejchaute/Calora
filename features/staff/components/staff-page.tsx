@@ -96,7 +96,7 @@ export function StaffPage() {
       setEmail(staffMember.email);
       setPhone(staffMember.phone);
       setAvatarUrl(staffMember.avatar_url);
-      setRole(staffMember.role);
+      setRole(staffMember.role || '');
       setBio(staffMember.bio);
       setStatus(staffMember.status);
       setSelectedServices(staffServices[staffMember.id] || []);

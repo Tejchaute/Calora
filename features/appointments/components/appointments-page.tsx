@@ -191,7 +191,7 @@ export function AppointmentsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: appt.services.color }} />
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: appt.services.color || undefined }} />
                           <span className="text-sm text-foreground">{appt.services.name}</span>
                         </div>
                       </TableCell>

@@ -199,7 +199,7 @@ export function DashboardPage() {
                     </div>
                     <div
                       className="h-10 w-1 rounded-full"
-                      style={{ backgroundColor: appt.services.color }}
+                      style={{ backgroundColor: appt.services.color || undefined }}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-foreground">
@@ -271,7 +271,7 @@ export function DashboardPage() {
                     </div>
                     <div
                       className="h-10 w-1 rounded-full"
-                      style={{ backgroundColor: appt.services.color }}
+                      style={{ backgroundColor: appt.services.color || undefined }}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-foreground">

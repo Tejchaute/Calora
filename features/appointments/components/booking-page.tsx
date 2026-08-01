@@ -64,12 +64,12 @@ export function BookingPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [{ data: svc }, { data: stf }, { data: bs }, { data: wh }, { data: hols }] = await getBookingInitialData();
-    setServices(svc || []);
-    setStaff(stf || []);
-    setBusinessSettings(bs);
-    setWorkingHours((wh as WorkingHours[]) || []);
-    setHolidays((hols as Holiday[]) || []);
+    const { services, staff, businessSettings: bs, workingHours: wh, holidays: hols } = await getBookingInitialData();
+    setServices(services.data || []);
+    setStaff(staff.data || []);
+    setBusinessSettings(bs.data);
+    setWorkingHours((wh.data as WorkingHours[]) || []);
+    setHolidays((hols.data as Holiday[]) || []);
     setLoading(false);
   };
 
@@ -100,8 +100,8 @@ export function BookingPage() {
     if (isHoliday) return [];
 
     const slots = generateTimeSlots(
-      dayHours.open_time,
-      dayHours.close_time,
+      dayHours.open_time || '09:00',
+      dayHours.close_time || '17:00',
       selectedService.duration,
       dayHours.break_start,
       dayHours.break_end
@@ -138,7 +138,7 @@ export function BookingPage() {
     }
 
     const endTime = addMinutes(selectedTime, selectedService.duration);
-    const appointment: Omit<Appointment, 'id' | 'created_at' | 'updated_at'> = {
+    const appointment: Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at'>> = {
       customer_id: customerId,
       service_id: selectedService.id,
       staff_id: selectedStaff === 'any' ? null : (selectedStaff as Staff).id,
@@ -352,9 +352,9 @@ export function BookingPage() {
                       >
                         <div
                           className="flex h-12 w-12 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: `${s.color}15` }}
+                          style={{ backgroundColor: `${s.color || '#2563EB'}15` }}
                         >
-                          <Scissors className="h-6 w-6" style={{ color: s.color }} />
+                          <Scissors className="h-6 w-6" style={{ color: s.color || '#2563EB' }} />
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-foreground">{s.name}</div>
@@ -579,8 +579,8 @@ export function BookingPage() {
                 <p className="mt-1 text-sm text-muted-foreground">Review the details below and confirm your appointment.</p>
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${selectedService?.color}15` }}>
-                      <Scissors className="h-5 w-5" style={{ color: selectedService?.color }} />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${selectedService?.color || '#2563EB'}15` }}>
+                      <Scissors className="h-5 w-5" style={{ color: selectedService?.color || '#2563EB' }} />
                     </div>
                     <div className="flex-1">
                       <div className="text-sm text-muted-foreground">Service</div>

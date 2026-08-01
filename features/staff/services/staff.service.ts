@@ -1,11 +1,11 @@
 import { supabase } from '@/lib/supabase/client';
-import type { Staff } from '@/types/database';
+import type { Staff, BusinessMember, Profile } from '@/types/database';
 
 export async function getStaff(search?: string) {
-  let query = supabase.from('staff').select('*').order('created_at', { ascending: false });
+  let query = supabase.from('staff').select('*, staff_services(service_id)').order('created_at', { ascending: false });
   if (search) {
     query = query.or(
-      `full_name.ilike.%${search}%,email.ilike.%${search}%,role.ilike.%${search}%`
+      `full_name.ilike.%${search}%,email.ilike.%${search}%,employee_code.ilike.%${search}%`
     );
   }
   return query;
@@ -20,12 +20,24 @@ export async function getActiveServices() {
 }
 
 export async function createStaff(
-  payload: Omit<Staff, 'id' | 'created_at' | 'updated_at' | 'profile_id'>,
+  payload: Partial<Omit<Staff, 'id' | 'created_at' | 'updated_at'>> & { role?: string },
   serviceIds: string[]
 ) {
+  const { data: businessMember } = await supabase
+    .from('business_members')
+    .select('business_id')
+    .eq('profile_id', (await supabase.auth.getUser()).data.user?.id || '')
+    .eq('status', 'active')
+    .maybeSingle();
+
+  const insertPayload = {
+    ...payload,
+    business_id: businessMember?.business_id || '',
+  };
+
   const { data, error } = await supabase
     .from('staff')
-    .insert(payload)
+    .insert(insertPayload)
     .select()
     .single();
   if (error || !data) return { data: null, error };

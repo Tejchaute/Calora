@@ -56,7 +56,7 @@ export async function createCustomerInline(payload: {
   return supabase.from('customers').insert(payload).select().single();
 }
 
-export async function createAppointment(payload: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>) {
+export async function createAppointment(payload: Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at'>>) {
   return supabase.from('appointments').insert(payload);
 }
 

@@ -71,7 +71,7 @@ export function ServicesPage() {
       setDescription(service.description);
       setDuration(String(service.duration));
       setPrice(String(service.price));
-      setColor(service.color);
+      setColor(service.color || SERVICE_COLORS[0]);
       setStatus(service.status);
     } else {
       setEditService(null);
@@ -194,9 +194,9 @@ export function ServicesPage() {
                 <div className="flex items-start justify-between">
                   <div
                     className="flex h-12 w-12 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${s.color}15` }}
+                    style={{ backgroundColor: `${s.color || '#2563EB'}15` }}
                   >
-                    <Scissors className="h-6 w-6" style={{ color: s.color }} />
+                    <Scissors className="h-6 w-6" style={{ color: s.color || '#2563EB' }} />
                   </div>
                   <Badge variant={s.status === 'active' ? 'default' : 'secondary'}>
                     {s.status === 'active' ? 'Active' : 'Inactive'}
