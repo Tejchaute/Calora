@@ -1,83 +1,164 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mail, Phone, Camera, Lock, Save } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/providers/auth-provider';
-import { updateProfile } from '../services/profile.service';
-import { updatePassword } from '../services/auth.service';
-import { getInitials } from '@/lib/utils';
+import { useEffect, useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { User, Mail, Phone, Camera, Save, CalendarClock, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingButton } from '@/components/shared/loading-button';
+import { InlineAlert } from '@/components/shared/inline-alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { useAuth } from '@/providers/auth-provider';
+import { updateProfile, getProfileWithMeta } from '../services/profile.service';
+import { AuthError } from '@/lib/auth/errors';
+import { getInitials, formatDate } from '@/lib/utils';
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
+  phone: z
+    .string()
+    .max(30, 'Phone number is too long')
+    .optional()
+    .or(z.literal('')),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+function joinName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`.trim();
+}
 
 export function ProfilePage() {
   const { profile, user, refreshProfile } = useAuth();
-  const [fullName, setFullName] = useState(profile?.full_name || '');
-  const [phone, setPhone] = useState(profile?.phone || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [lastSignIn, setLastSignIn] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(true);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [savingPassword, setSavingPassword] = useState(false);
+  const { firstName: initFirst, lastName: initLast } = useMemo(
+    () => splitName(profile?.full_name || ''),
+    [profile?.full_name]
+  );
 
-  const handleSaveProfile = async () => {
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { firstName: initFirst, lastName: initLast, phone: profile?.phone || '' },
+  });
+
+  useEffect(() => {
     if (!user) return;
-    setSavingProfile(true);
+    let mounted = true;
+    setLoadingMeta(true);
+    getProfileWithMeta(user.id)
+      .then(({ profile: fetchedProfile, lastSignIn: lastSignInAt }) => {
+        if (!mounted) return;
+        setLastSignIn(lastSignInAt);
+        setCreatedAt(fetchedProfile?.created_at || user.created_at || null);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCreatedAt(user.created_at || null);
+      })
+      .finally(() => {
+        if (mounted) setLoadingMeta(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
+  const onSubmit = async (values: ProfileFormValues) => {
+    if (!user) return;
+    setFormError(null);
     try {
       await updateProfile(user.id, {
-        full_name: fullName,
-        phone,
+        full_name: joinName(values.firstName, values.lastName),
+        phone: values.phone || '',
         avatar_url: avatarUrl,
       });
+      await refreshProfile();
+      toast.success('Profile updated successfully');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
-      setSavingProfile(false);
-      return;
+      const message =
+        err instanceof AuthError ? err.message : 'Failed to update profile. Please try again.';
+      setFormError(message);
     }
-    await refreshProfile();
-    toast.success('Profile updated');
-    setSavingProfile(false);
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      toast.error('Please fill in both password fields');
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    setSavingPassword(true);
-    try {
-      await updatePassword(newPassword);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update password');
-      setSavingPassword(false);
-      return;
-    }
-    toast.success('Password updated');
-    setNewPassword('');
-    setConfirmPassword('');
-    setSavingPassword(false);
-  };
+  const email = profile?.email || user?.email || '';
+  const displayName = joinName(form.watch('firstName'), form.watch('lastName')) || email;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your personal information and password.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your personal information and avatar.
+        </p>
       </div>
 
-      {/* Profile Info */}
+      {formError && (
+        <InlineAlert variant="error" title="Could not save profile">
+          {formError}
+        </InlineAlert>
+      )}
+
+      {/* Avatar */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Camera className="h-5 w-5 text-primary" />
+            Avatar
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-4">
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">
+              {getInitials(displayName || 'U')}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-1">
+            <label htmlFor="avatar-url" className="text-sm font-medium text-foreground">
+              Avatar URL
+            </label>
+            <Input
+              id="avatar-url"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              placeholder="https://..."
+              aria-describedby="avatar-hint"
+            />
+            <p id="avatar-hint" className="text-xs text-muted-foreground">
+              {/* TODO: integrate Supabase Storage file upload here */}
+              Paste an image URL. Direct file upload will be available once storage is configured.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Personal Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -85,99 +166,140 @@ export function ProfilePage() {
             Personal Information
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={avatarUrl} alt={fullName} />
-              <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">
-                {getInitials(fullName || 'U')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <Label>Avatar URL</Label>
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://..."
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Jane"
+                          autoComplete="given-name"
+                          aria-describedby={undefined}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Camera className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Full name</Label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Your name"
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={profile?.email || user?.email || ''}
-                  readOnly
-                  className="bg-muted/50 pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 234 567 890"
-                  className="pl-10"
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Doe"
+                          autoComplete="family-name"
+                          aria-describedby={undefined}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={handleSaveProfile} disabled={savingProfile}>
-              <Save className="mr-2 h-4 w-4" />
-              {savingProfile ? 'Saving...' : 'Save changes'}
-            </Button>
-          </div>
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone number</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          placeholder="+1 234 567 890"
+                          className="pl-10"
+                          autoComplete="tel"
+                          aria-describedby={undefined}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end pt-2">
+                <LoadingButton type="submit" loading={form.formState.isSubmitting}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
+                </LoadingButton>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
 
-      {/* Change Password */}
+      {/* Account Details (read-only) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Lock className="h-5 w-5 text-primary" />
-            Change Password
+            <Mail className="h-5 w-5 text-primary" />
+            Account Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>New password</Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="At least 6 characters"
-            />
+            <label className="text-sm font-medium text-foreground" htmlFor="email-readonly">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email-readonly"
+                value={email}
+                readOnly
+                className="bg-muted/50 pl-10"
+                aria-label="Email (read only)"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
           </div>
-          <div className="space-y-2">
-            <Label>Confirm new password</Label>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter new password"
-            />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={handleChangePassword} disabled={savingPassword} variant="outline">
-              {savingPassword ? 'Updating...' : 'Update password'}
-            </Button>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="created-readonly">
+                Account created
+              </label>
+              <div className="relative">
+                <CalendarPlus className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="created-readonly"
+                  value={loadingMeta ? 'Loading...' : createdAt ? formatDate(createdAt) : '—'}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Account creation date (read only)"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="last-login-readonly">
+                Last login
+              </label>
+              <div className="relative">
+                <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="last-login-readonly"
+                  value={loadingMeta ? 'Loading...' : lastSignIn ? formatDate(lastSignIn) : '—'}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Last login date (read only)"
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
