@@ -16,6 +16,13 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Palette,
+  Monitor,
+  LogOut,
+  Clock,
+  CalendarDays,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,11 +39,22 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/providers/auth-provider';
 import { updateProfile, getProfileWithMeta } from '../services/profile.service';
-import { updatePassword } from '../services/auth.service';
+import { updatePassword, signOut as signOutService } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
 import { getInitials, formatDate } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useAccountPreferences } from '../hooks/use-account-preferences';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
@@ -209,6 +227,58 @@ export function ProfilePage() {
       const message =
         err instanceof AuthError ? err.message : 'Failed to change password. Please try again.';
       setPasswordError(message);
+    }
+  };
+
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { preferences, loading: prefsLoading, save: savePreferences } = useAccountPreferences();
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [sessionInfo, setSessionInfo] = useState<{ device: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    let browser = 'Unknown browser';
+    if (/Edg|Edge/.test(ua)) browser = 'Microsoft Edge';
+    else if (/Chrome/.test(ua)) browser = 'Google Chrome';
+    else if (/Firefox/.test(ua)) browser = 'Mozilla Firefox';
+    else if (/Safari/.test(ua)) browser = 'Apple Safari';
+    let os = 'Unknown OS';
+    if (/Windows/.test(ua)) os = 'Windows';
+    else if (/Mac OS|Macintosh/.test(ua)) os = 'macOS';
+    else if (/Android/.test(ua)) os = 'Android';
+    else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+    else if (/Linux/.test(ua)) os = 'Linux';
+    setSessionInfo({ device: `${browser} on ${os}` });
+  }, []);
+
+  const handleThemeChange = (next: string) => {
+    setTheme(next);
+  };
+
+  const handlePrefChange = async (patch: Partial<typeof preferences>) => {
+    setPrefsSaving(true);
+    try {
+      await savePreferences({ ...preferences, ...patch });
+      toast.success('Preferences saved');
+    } catch {
+      toast.error('Failed to save preferences');
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOutService();
+      toast.success('Signed out successfully');
+    } catch (err) {
+      const message = err instanceof AuthError ? err.message : 'Failed to sign out. Please try again.';
+      toast.error(message);
+    } finally {
+      setSigningOut(false);
     }
   };
 
@@ -409,6 +479,188 @@ export function ProfilePage() {
               </div>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+
+      {/* Account Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Palette className="h-5 w-5 text-primary" />
+            Account Preferences
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Theme */}
+          <div className="space-y-2">
+            <Label htmlFor="theme-select" className="flex items-center gap-2 text-sm font-medium">
+              <Palette className="h-4 w-4 text-muted-foreground" />
+              Theme
+            </Label>
+            <Select value={theme ?? 'system'} onValueChange={handleThemeChange}>
+              <SelectTrigger id="theme-select" className="w-full sm:w-64" aria-label="Theme preference">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">
+                  <span className="flex items-center gap-2">
+                    <Sun className="h-4 w-4" /> Light
+                  </span>
+                </SelectItem>
+                <SelectItem value="dark">
+                  <span className="flex items-center gap-2">
+                    <Moon className="h-4 w-4" /> Dark
+                  </span>
+                </SelectItem>
+                <SelectItem value="system">
+                  <span className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" /> System
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Currently active: {resolvedTheme ?? 'system'}
+            </p>
+          </div>
+
+          {/* Time Format */}
+          <div className="space-y-2">
+            <Label htmlFor="time-format-select" className="flex items-center gap-2 text-sm font-medium">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              Time Format
+            </Label>
+            <Select
+              value={preferences.timeFormat}
+              onValueChange={(v) => handlePrefChange({ timeFormat: v as '12h' | '24h' })}
+              disabled={prefsLoading || prefsSaving}
+            >
+              <SelectTrigger id="time-format-select" className="w-full sm:w-64" aria-label="Time format preference">
+                <SelectValue placeholder="Select time format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+                <SelectItem value="24h">24-hour</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Week Start */}
+          <div className="space-y-2">
+            <Label htmlFor="week-start-select" className="flex items-center gap-2 text-sm font-medium">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              Week Start Day
+            </Label>
+            <Select
+              value={preferences.weekStart}
+              onValueChange={(v) => handlePrefChange({ weekStart: v as 'sunday' | 'monday' })}
+              disabled={prefsLoading || prefsSaving}
+            >
+              <SelectTrigger id="week-start-select" className="w-full sm:w-64" aria-label="Week start day preference">
+                <SelectValue placeholder="Select week start day" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sunday">Sunday</SelectItem>
+                <SelectItem value="monday">Monday</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {prefsSaving && (
+            <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              Saving preferences...
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Current Session */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Monitor className="h-5 w-5 text-primary" />
+            Current Session
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="session-email-readonly">
+                Signed in as
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="session-email-readonly"
+                  value={email}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Signed in email (read only)"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="session-status-readonly">
+                Authentication status
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="session-status-readonly"
+                  value={user ? 'Authenticated' : 'Not signed in'}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Authentication status (read only)"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="session-last-login-readonly">
+                Last sign in
+              </label>
+              <div className="relative">
+                <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="session-last-login-readonly"
+                  value={loadingMeta ? 'Loading...' : lastSignIn ? formatDate(lastSignIn) : '—'}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Last sign in (read only)"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="session-device-readonly">
+                Current device
+              </label>
+              <div className="relative">
+                <Monitor className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="session-device-readonly"
+                  value={sessionInfo?.device ?? 'Detecting...'}
+                  readOnly
+                  className="bg-muted/50 pl-10"
+                  aria-label="Current device (read only)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <LoadingButton
+              type="button"
+              variant="destructive"
+              loading={signingOut}
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {signingOut ? 'Signing out...' : 'Sign out'}
+            </LoadingButton>
+          </div>
         </CardContent>
       </Card>
 
