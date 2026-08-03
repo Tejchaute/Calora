@@ -4,7 +4,19 @@ import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Mail, Phone, Camera, Save, CalendarClock, CalendarPlus } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Phone,
+  Camera,
+  Save,
+  CalendarClock,
+  CalendarPlus,
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +34,7 @@ import {
 } from '@/components/ui/form';
 import { useAuth } from '@/providers/auth-provider';
 import { updateProfile, getProfileWithMeta } from '../services/profile.service';
+import { updatePassword } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
 import { getInitials, formatDate } from '@/lib/utils';
 
@@ -36,6 +49,76 @@ const profileSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Must contain an uppercase letter')
+      .regex(/[a-z]/, 'Must contain a lowercase letter')
+      .regex(/[0-9]/, 'Must contain a number'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+
+function PasswordField({
+  label,
+  name,
+  control,
+  placeholder,
+  autoComplete,
+  show,
+  onToggle,
+}: {
+  label: string;
+  name: 'currentPassword' | 'newPassword' | 'confirmPassword';
+  control: any;
+  placeholder: string;
+  autoComplete: string;
+  show: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                {...field}
+                type={show ? 'text' : 'password'}
+                placeholder={placeholder}
+                className="pl-10 pr-10"
+                autoComplete={autoComplete}
+                aria-describedby={undefined}
+              />
+              <button
+                type="button"
+                onClick={onToggle}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label={show ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
@@ -103,6 +186,29 @@ export function ProfilePage() {
       const message =
         err instanceof AuthError ? err.message : 'Failed to update profile. Please try again.';
       setFormError(message);
+    }
+  };
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+  });
+
+  const onPasswordSubmit = async (values: PasswordFormValues) => {
+    setPasswordError(null);
+    try {
+      await updatePassword(values.newPassword);
+      passwordForm.reset();
+      toast.success('Password changed successfully');
+    } catch (err) {
+      const message =
+        err instanceof AuthError ? err.message : 'Failed to change password. Please try again.';
+      setPasswordError(message);
     }
   };
 
@@ -235,6 +341,70 @@ export function ProfilePage() {
                 <LoadingButton type="submit" loading={form.formState.isSubmitting}>
                   <Save className="mr-2 h-4 w-4" />
                   {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
+                </LoadingButton>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <KeyRound className="h-5 w-5 text-primary" />
+            Change Password
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {passwordError && (
+            <div className="mb-4">
+              <InlineAlert variant="error" title="Could not change password">
+                {passwordError}
+              </InlineAlert>
+            </div>
+          )}
+          <Form {...passwordForm}>
+            <form
+              onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+              className="space-y-5"
+            >
+              <PasswordField
+                label="Current password"
+                name="currentPassword"
+                control={passwordForm.control}
+                placeholder="Enter your current password"
+                autoComplete="current-password"
+                show={showCurrent}
+                onToggle={() => setShowCurrent((v) => !v)}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <PasswordField
+                  label="New password"
+                  name="newPassword"
+                  control={passwordForm.control}
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
+                  show={showNew}
+                  onToggle={() => setShowNew((v) => !v)}
+                />
+                <PasswordField
+                  label="Confirm password"
+                  name="confirmPassword"
+                  control={passwordForm.control}
+                  placeholder="Re-enter new password"
+                  autoComplete="new-password"
+                  show={showConfirm}
+                  onToggle={() => setShowConfirm((v) => !v)}
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <LoadingButton
+                  type="submit"
+                  loading={passwordForm.formState.isSubmitting}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  {passwordForm.formState.isSubmitting ? 'Updating...' : 'Change password'}
                 </LoadingButton>
               </div>
             </form>
