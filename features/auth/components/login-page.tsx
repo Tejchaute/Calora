@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Calendar } from 'lucide-react';
+import { Eye, EyeOff, Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,8 +41,11 @@ export function LoginPage() {
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
+    mode: 'onTouched',
     defaultValues: { email: '', password: '', remember: false },
   });
+
+  const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (values: LoginValues) => {
     setAuthError(null);
@@ -62,20 +65,24 @@ export function LoginPage() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-lg font-semibold text-foreground">Calora</span>
+        <span className="text-h5 text-foreground">Calora</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Sign in to your account to continue.</p>
+      <h1 className="text-h2 text-foreground">Welcome back</h1>
+      <p className="mt-4 text-body text-muted-foreground">
+        Sign in to your account to continue.
+      </p>
 
-      {authError && (
-        <div className="mt-4">
-          <InlineAlert variant="error">{authError}</InlineAlert>
-        </div>
-      )}
+      <div aria-live="polite">
+        {authError && (
+          <div className="mt-6">
+            <InlineAlert variant="error">{authError}</InlineAlert>
+          </div>
+        )}
+      </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-10 space-y-6" noValidate>
           <FormField
             control={form.control}
             name="email"
@@ -83,17 +90,14 @@ export function LoginPage() {
               <FormItem>
                 <FormLabel>Email address</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="you@example.com"
-                      className="pl-10"
-                      autoComplete="email"
-                      aria-describedby={undefined}
-                    />
-                  </div>
+                  <Input
+                    {...field}
+                    type="email"
+                    inputMode="email"
+                    placeholder="you@example.com"
+                    className="h-12 transition-fast"
+                    autoComplete="email"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -105,36 +109,26 @@ export function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
-                  <Link
-                    href={AUTH_ROUTES.forgotPassword}
-                    className="text-xs font-medium text-primary hover:text-primary"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <FormLabel>Password</FormLabel>
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      className="pl-10 pr-10"
+                      className="h-12 pr-12 transition-fast"
                       autoComplete="current-password"
-                      aria-describedby={undefined}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -144,32 +138,43 @@ export function LoginPage() {
             control={form.control}
             name="remember"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-2 space-y-0">
+              <FormItem className="flex flex-row items-center gap-3 space-y-0">
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    aria-label="Remember me"
-                  />
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal text-muted-foreground">
-                  Remember me
+                <FormLabel className="text-small font-normal text-muted-foreground">
+                  Keep me signed in
                 </FormLabel>
               </FormItem>
             )}
           />
 
-          <LoadingButton type="submit" className="w-full" loading={form.formState.isSubmitting}>
-            Sign in
-            {!form.formState.isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+          <LoadingButton
+            type="submit"
+            className="h-12 w-full text-body font-medium transition-fast"
+            loading={isSubmitting}
+          >
+            {isSubmitting ? 'Signing in…' : 'Sign in'}
           </LoadingButton>
         </form>
       </Form>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-body">
+        <Link
+          href={AUTH_ROUTES.forgotPassword}
+          className="font-medium text-primary transition-fast hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </p>
+
+      <p className="mt-10 text-center text-small text-muted-foreground">
         {"Don't have an account? "}
-        <Link href={AUTH_ROUTES.register} className="font-medium text-primary hover:text-primary">
-          Sign up free
+        <Link
+          href={AUTH_ROUTES.register}
+          className="font-medium text-primary transition-fast hover:underline"
+        >
+          Create account
         </Link>
       </p>
     </div>
