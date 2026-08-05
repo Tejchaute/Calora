@@ -1,0 +1,249 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Staff, Service } from '@/types/database';
+import { staffSchema } from '../schemas/staff.schema';
+import {
+  getActiveServices,
+  createStaff,
+  updateStaff,
+} from '../services/staff.service';
+import { handleError } from '@/lib/errors/error-handler';
+
+interface StaffFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  staff?: Staff | null;
+  initialServiceIds?: string[];
+  onSuccess: () => Promise<void>;
+}
+
+type StaffFormValues = {
+  full_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: 'active' | 'inactive';
+};
+
+export function StaffFormDialog({
+  open,
+  onOpenChange,
+  staff,
+  initialServiceIds,
+  onSuccess,
+}: StaffFormDialogProps) {
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<StaffFormValues>({
+    resolver: zodResolver(staffSchema),
+    defaultValues: {
+      full_name: '',
+      email: '',
+      phone: '',
+      role: '',
+      status: 'active',
+    },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    fetchServices();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (staff) {
+      reset({
+        full_name: staff.full_name,
+        email: staff.email,
+        phone: staff.phone,
+        role: staff.role || '',
+        status: staff.status,
+      });
+      setSelectedServices(initialServiceIds ?? []);
+    } else {
+      reset({
+        full_name: '',
+        email: '',
+        phone: '',
+        role: '',
+        status: 'active',
+      });
+      setSelectedServices([]);
+    }
+  }, [open, staff, initialServiceIds, reset]);
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await getActiveServices();
+      if (error) {
+        handleError(error, { fallbackMessage: 'Failed to load services' });
+        return;
+      }
+      setServices(data ?? []);
+    } catch (error) {
+      handleError(error, { fallbackMessage: 'Unexpected error while loading services' });
+    }
+  };
+
+  const toggleService = (serviceId: string) => {
+    setSelectedServices((prev) =>
+      prev.includes(serviceId)
+        ? prev.filter((id) => id !== serviceId)
+        : [...prev, serviceId],
+    );
+  };
+
+  const handleSave = handleSubmit(async (values) => {
+    const payload = {
+      full_name: values.full_name,
+      email: values.email,
+      phone: values.phone,
+      role: values.role,
+      status: values.status,
+    };
+
+    try {
+      if (staff) {
+        const { error } = await updateStaff(staff.id, payload, selectedServices);
+        if (error) {
+          handleError(error, { fallbackMessage: 'Failed to update staff member' });
+          return;
+        }
+        toast.success('Staff member updated');
+      } else {
+        const { error } = await createStaff(payload, selectedServices);
+        if (error) {
+          handleError(error, { fallbackMessage: 'Failed to create staff member' });
+          return;
+        }
+        toast.success('Staff member added');
+      }
+
+      reset();
+      setSelectedServices([]);
+      onOpenChange(false);
+      await onSuccess();
+    } catch (error) {
+      handleError(error, { fallbackMessage: 'Failed to save staff member.' });
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{staff ? 'Edit Staff Member' : 'Add Staff Member'}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Full name *</Label>
+            <Input {...register('full_name')} placeholder="Dr. Jane Doe" />
+            {errors.full_name && (
+              <p className="text-sm text-destructive">{errors.full_name.message}</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" {...register('email')} placeholder="jane@business.com" />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input {...register('phone')} placeholder="+1 234 567 890" />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Role / Title</Label>
+            <Input {...register('role')} placeholder="e.g. Senior Stylist, Dentist, Trainer" />
+            {errors.role && (
+              <p className="text-sm text-destructive">{errors.role.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Assigned services</Label>
+            <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-border p-3 scrollbar-thin">
+              {services.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No services available. Add services first.</p>
+              ) : (
+                services.map((s) => (
+                  <div key={s.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`svc-${s.id}`}
+                      checked={selectedServices.includes(s.id)}
+                      onCheckedChange={() => toggleService(s.id)}
+                    />
+                    <label htmlFor={`svc-${s.id}`} className="flex-1 text-sm text-foreground">
+                      {s.name} • {s.duration}min
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={(v) => field.onChange(v as 'active' | 'inactive')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : staff ? 'Update' : 'Add'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
