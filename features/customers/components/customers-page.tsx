@@ -3,46 +3,25 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Plus,
-  Search,
-  Users,
   Edit,
-  Trash2,
+  ArrowLeft,
   Phone,
   Mail,
+  CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
-  CalendarIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { EmptyState } from '@/components/shared/empty-state';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { CustomersFilters } from './customers-filters';
+import { CustomersTable } from './customers-table';
+import { CustomerFormDialog } from './customer-form-dialog';
+import { DeleteCustomerDialog } from './delete-customer-dialog';
 import {
   getCustomers,
-  createCustomer,
-  updateCustomer,
   deleteCustomer,
   getCustomerAppointments,
   CUSTOMERS_PAGE_SIZE,
@@ -51,7 +30,6 @@ import { getInitials, formatDate, formatTime, formatCurrency } from '@/lib/utils
 import type { Customer, AppointmentWithRelations } from '@/types/database';
 import { toast } from 'sonner';
 import { handleError } from '@/lib/errors/error-handler';
-import { customerSchema } from "../schemas/customer.schema";
 
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -66,36 +44,20 @@ export function CustomersPage() {
   const [customerAppts, setCustomerAppts] = useState<AppointmentWithRelations[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Form state
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-
     try {
-      const { data, count, error } = await getCustomers({
-        page,
-        search,
-      });
+      const { data, count, error } = await getCustomers({ page, search });
 
       if (error) {
-        handleError(error, {
-          fallbackMessage: "Failed to load customers"
-        });
+        handleError(error, { fallbackMessage: 'Failed to load customers' });
         return;
       }
 
       setCustomers(data ?? []);
       setTotal(count ?? 0);
-
     } catch (error) {
-        handleError(error, {
-          fallbackMessage: "Unexpected error while loading customers."
-        });
+      handleError(error, { fallbackMessage: 'Unexpected error while loading customers.' });
     } finally {
       setLoading(false);
     }
@@ -106,64 +68,15 @@ export function CustomersPage() {
   }, [fetchCustomers]);
 
   const openForm = (customer?: Customer) => {
-    if (customer) {
-      setEditCustomer(customer);
-      setFullName(customer.full_name);
-      setEmail(customer.email);
-      setPhone(customer.phone);
-      setNotes(customer.notes);
-    } else {
-      setEditCustomer(null);
-      setFullName('');
-      setEmail('');
-      setPhone('');
-      setNotes('');
-    }
+    setEditCustomer(customer ?? null);
     setFormOpen(true);
-  };
-
-  const handleSave = async () => {
-    const validation = customerSchema.safeParse({
-      fullName,
-      email,
-      phone,
-      notes,
-    });
-
-    if (!validation.success) {
-      toast.error(validation.error.issues[0].message);
-      return;
-    }
-    setSaving(true);
-    const payload = { full_name: fullName, email, phone, notes };
-
-    if (editCustomer) {
-      const { error } = await updateCustomer(editCustomer.id, payload);
-      if (error) {
-        toast.error('Failed to update customer');
-        setSaving(false);
-        return;
-      }
-      toast.success('Customer updated');
-    } else {
-      const { error } = await createCustomer(payload);
-      if (error) {
-        toast.error('Failed to create customer');
-        setSaving(false);
-        return;
-      }
-      toast.success('Customer added');
-    }
-    setSaving(false);
-    setFormOpen(false);
-    await fetchCustomers();
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     const { error } = await deleteCustomer(deleteId);
     if (error) {
-      toast.error('Failed to delete customer');
+      handleError(error, { fallbackMessage: 'Failed to delete customer' });
       return;
     }
     toast.success('Customer deleted');
@@ -179,16 +92,13 @@ export function CustomersPage() {
       const { data, error } = await getCustomerAppointments(customer.id);
 
       if (error) {
-        toast.error('Failed to load customer history');
+        handleError(error, { fallbackMessage: 'Failed to load customer history' });
         return;
       }
 
-      setCustomerAppts(
-        (data as AppointmentWithRelations[]) ?? []
-      );
+      setCustomerAppts((data as AppointmentWithRelations[]) ?? []);
     } catch (error) {
-      console.error(error);
-      toast.error('Unexpected error while loading customer history');
+      handleError(error, { fallbackMessage: 'Unexpected error while loading customer history' });
     } finally {
       setDetailLoading(false);
     }
@@ -208,7 +118,6 @@ export function CustomersPage() {
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src="" alt={detailCustomer.full_name} />
                 <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
                   {getInitials(detailCustomer.full_name)}
                 </AvatarFallback>
@@ -235,7 +144,14 @@ export function CustomersPage() {
                   </div>
                 )}
               </div>
-              <Button variant="outline" size="sm" onClick={() => { openForm(detailCustomer); setDetailCustomer(null); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  openForm(detailCustomer);
+                  setDetailCustomer(null);
+                }}
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
@@ -266,11 +182,15 @@ export function CustomersPage() {
                     key={appt.id}
                     className="flex items-center gap-3 rounded-lg border border-border p-3"
                   >
-                    <div className="h-10 w-1 rounded-full" style={{ backgroundColor: appt.services.color || undefined }} />
+                    <div
+                      className="h-10 w-1 rounded-full"
+                      style={{ backgroundColor: appt.services.color || undefined }}
+                    />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-foreground">{appt.services.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {formatDate(appt.appointment_date)} at {formatTime(appt.start_time)} • {appt.staff?.full_name || 'Any staff'}
+                        {formatDate(appt.appointment_date)} at {formatTime(appt.start_time)} •{' '}
+                        {appt.staff?.full_name || 'Any staff'}
                       </div>
                     </div>
                     <div className="text-sm font-medium text-foreground">
@@ -300,101 +220,46 @@ export function CustomersPage() {
         </Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search customers..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          className="pl-10"
-        />
-      </div>
+      <CustomersFilters
+        search={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(0);
+        }}
+      />
 
-      <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="space-y-2 p-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : customers.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="No customers found"
-              description={search ? 'Try adjusting your search.' : 'Add your first customer to get started.'}
-              action={{ label: 'Add customer', onClick: () => openForm() }}
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Added</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customers.map((c) => (
-                    <TableRow
-                      key={c.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => openDetail(c)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
-                              {getInitials(c.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-foreground">{c.full_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{c.phone || '—'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{c.email || '—'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(c.created_at)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openForm(c); }}
-                            className="rounded p-1.5 text-muted-foreground hover:bg-muted"
-                            title="Edit"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
-                            className="rounded p-1.5 text-destructive hover:bg-destructive/10"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <CustomersTable
+        customers={customers}
+        loading={loading}
+        hasFilters={search !== ''}
+        onEdit={openForm}
+        onDelete={setDeleteId}
+        onRowClick={openDetail}
+        onCreate={() => openForm()}
+      />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {page * CUSTOMERS_PAGE_SIZE + 1}–{Math.min((page + 1) * CUSTOMERS_PAGE_SIZE, total)} of {total}
+            Showing {page * CUSTOMERS_PAGE_SIZE + 1}–
+            {Math.min((page + 1) * CUSTOMERS_PAGE_SIZE, total)} of {total}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+            >
               Next
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -402,47 +267,15 @@ export function CustomersPage() {
         </div>
       )}
 
-      {/* Form Dialog */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editCustomer ? 'Edit Customer' : 'Add Customer'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Full name *</Label>
-              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 890" />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes about this customer..." />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : editCustomer ? 'Update' : 'Add'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ConfirmDialog
+      <CustomerFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        customer={editCustomer}
+        onSuccess={fetchCustomers}
+      />
+      <DeleteCustomerDialog
         open={!!deleteId}
         onOpenChange={(o) => !o && setDeleteId(null)}
-        title="Delete customer?"
-        description="This will also delete all their appointments. This action cannot be undone."
-        confirmLabel="Delete"
         onConfirm={handleDelete}
       />
     </div>

@@ -33,6 +33,10 @@ import {
 import { handleError } from '@/lib/errors/error-handler';
 import { appointmentSchema } from '../schemas/appointment.schema';
 
+const ANY_STAFF = 'any';
+const NEW_CUSTOMER = '__new__';
+const SELECT_CUSTOMER = '__select__';
+
 interface AppointmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -86,7 +90,7 @@ export function AppointmentFormDialog({
     defaultValues: {
       customer_id: '',
       service_id: '',
-      staff_id: 'any',
+      staff_id: ANY_STAFF,
       appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
       start_time: '09:00',
       end_time: '09:00',
@@ -108,7 +112,7 @@ export function AppointmentFormDialog({
       reset({
         customer_id: appointment.customer_id,
         service_id: appointment.service_id,
-        staff_id: appointment.staff_id || 'any',
+        staff_id: appointment.staff_id || ANY_STAFF,
         appointment_date: appointment.appointment_date,
         start_time: appointment.start_time,
         end_time: appointment.end_time || appointment.start_time,
@@ -122,7 +126,7 @@ export function AppointmentFormDialog({
       reset({
         customer_id: '',
         service_id: '',
-        staff_id: 'any',
+        staff_id: ANY_STAFF,
         appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
         start_time: '09:00',
         end_time: '09:00',
@@ -144,7 +148,9 @@ export function AppointmentFormDialog({
       ] = await getFormOptions();
 
       if (svcError || stfError || custError) {
-        toast.error('Failed to load booking options');
+        handleError(svcError || stfError || custError, {
+          fallbackMessage: 'Failed to load booking options',
+        });
         return;
       }
 
@@ -175,14 +181,14 @@ export function AppointmentFormDialog({
   const handleSave = handleSubmit(async (values) => {
     let finalCustomerId = values.customer_id;
 
-    if (values.customer_id === '__new__' && values.newCustomerName.trim()) {
+    if (values.customer_id === NEW_CUSTOMER && values.newCustomerName.trim()) {
       const { data: newCust, error } = await createCustomerInline({
         full_name: values.newCustomerName,
         phone: values.newCustomerPhone,
         email: values.newCustomerEmail,
       });
       if (error) {
-        toast.error('Failed to create customer');
+        handleError(error, { fallbackMessage: 'Failed to create customer' });
         return;
       }
       finalCustomerId = newCust.id;
@@ -191,7 +197,7 @@ export function AppointmentFormDialog({
     const payload = {
       customer_id: finalCustomerId,
       service_id: values.service_id,
-      staff_id: values.staff_id === 'any' ? null : values.staff_id,
+      staff_id: values.staff_id === ANY_STAFF ? null : values.staff_id,
       appointment_date: values.appointment_date,
       start_time: values.start_time,
       end_time: values.end_time,
@@ -202,14 +208,14 @@ export function AppointmentFormDialog({
     if (appointment) {
       const { error } = await updateAppointment(appointment.id, payload);
       if (error) {
-        toast.error('Failed to update appointment');
+        handleError(error, { fallbackMessage: 'Failed to update appointment' });
         return;
       }
       toast.success('Appointment updated');
     } else {
       const { error } = await createAppointment(payload);
       if (error) {
-        toast.error('Failed to create appointment');
+        handleError(error, { fallbackMessage: 'Failed to create appointment' });
         return;
       }
       toast.success('Appointment created');
@@ -235,7 +241,7 @@ export function AppointmentFormDialog({
               name="customer_id"
               render={({ field }) => (
                 <>
-                  {field.value === '__new__' || (field.value === '' && customers.length === 0) ? (
+                  {field.value === NEW_CUSTOMER || (field.value === '' && customers.length === 0) ? (
                     <div className="space-y-2 rounded-lg border border-border p-3">
                       <Input
                         placeholder="Customer name *"
@@ -257,7 +263,7 @@ export function AppointmentFormDialog({
                       {customers.length > 0 && (
                         <button
                           type="button"
-                          onClick={() => field.onChange('__select__')}
+                          onClick={() => field.onChange(SELECT_CUSTOMER)}
                           className="text-xs font-medium text-primary hover:text-primary"
                         >
                           Or select an existing customer
@@ -266,7 +272,7 @@ export function AppointmentFormDialog({
                     </div>
                   ) : (
                     <Select
-                      value={field.value === '__select__' ? '' : field.value}
+                      value={field.value === SELECT_CUSTOMER ? '' : field.value}
                       onValueChange={(v) => field.onChange(v)}
                     >
                       <SelectTrigger>
@@ -278,11 +284,11 @@ export function AppointmentFormDialog({
                             {c.full_name} {c.phone ? `• ${c.phone}` : ''}
                           </SelectItem>
                         ))}
-                        <SelectItem value="__new__">+ Create new customer</SelectItem>
+                        <SelectItem value={NEW_CUSTOMER}>+ Create new customer</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
-                  {field.value === '__select__' && (
+                  {field.value === SELECT_CUSTOMER && (
                     <Select
                       value=""
                       onValueChange={(v) => field.onChange(v)}
@@ -296,7 +302,7 @@ export function AppointmentFormDialog({
                             {c.full_name} {c.phone ? `• ${c.phone}` : ''}
                           </SelectItem>
                         ))}
-                        <SelectItem value="__new__">+ Create new customer</SelectItem>
+                        <SelectItem value={NEW_CUSTOMER}>+ Create new customer</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -344,7 +350,7 @@ export function AppointmentFormDialog({
                     <SelectValue placeholder="Any staff" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any staff</SelectItem>
+                    <SelectItem value={ANY_STAFF}>Any staff</SelectItem>
                     {staff.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.full_name}
