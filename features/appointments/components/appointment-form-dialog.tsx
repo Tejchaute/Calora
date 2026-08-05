@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { addMinutes, format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { addMinutes, format } from 'date-fns';
 import type { Service, Staff, Customer, Appointment } from '@/types/database';
 import {
   getFormOptions,
@@ -29,7 +31,7 @@ import {
   updateAppointment,
 } from '../services/appointments.service';
 import { handleError } from '@/lib/errors/error-handler';
-import { appointmentSchema } from "../schemas/appointment.schema";
+import { appointmentSchema } from '../schemas/appointment.schema';
 
 interface AppointmentFormDialogProps {
   open: boolean;
@@ -38,6 +40,27 @@ interface AppointmentFormDialogProps {
   defaultDate?: string;
   onSaved: () => void;
 }
+
+type AppointmentFormValues = {
+  customer_id: string;
+  service_id: string;
+  staff_id: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  status: Appointment['status'];
+  notes: string;
+  newCustomerName: string;
+  newCustomerPhone: string;
+  newCustomerEmail: string;
+};
+
+const STATUS_VALUES: Appointment['status'][] = [
+  'pending',
+  'confirmed',
+  'completed',
+  'cancelled',
+];
 
 export function AppointmentFormDialog({
   open,
@@ -50,45 +73,67 @@ export function AppointmentFormDialog({
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  const [customerId, setCustomerId] = useState('');
-  const [serviceId, setServiceId] = useState('');
-  const [staffId, setStaffId] = useState('');
-  const [date, setDate] = useState(defaultDate || format(new Date(), 'yyyy-MM-dd'));
-  const [startTime, setStartTime] = useState('09:00');
-  const [status, setStatus] = useState<Appointment['status']>('pending');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const [newCustomerName, setNewCustomerName] = useState('');
-  const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [newCustomerEmail, setNewCustomerEmail] = useState('');
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<AppointmentFormValues>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      customer_id: '',
+      service_id: '',
+      staff_id: 'any',
+      appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
+      start_time: '09:00',
+      end_time: '09:00',
+      status: 'pending',
+      notes: '',
+      newCustomerName: '',
+      newCustomerPhone: '',
+      newCustomerEmail: '',
+    },
+  });
 
   useEffect(() => {
-    if (open) fetchOptions();
+    if (!open) return;
+    fetchOptions();
   }, [open]);
 
   useEffect(() => {
     if (appointment) {
-      setCustomerId(appointment.customer_id);
-      setServiceId(appointment.service_id);
-      setStaffId(appointment.staff_id || 'any');
-      setDate(appointment.appointment_date);
-      setStartTime(appointment.start_time);
-      setStatus(appointment.status);
-      setNotes(appointment.notes || '');
+      reset({
+        customer_id: appointment.customer_id,
+        service_id: appointment.service_id,
+        staff_id: appointment.staff_id || 'any',
+        appointment_date: appointment.appointment_date,
+        start_time: appointment.start_time,
+        end_time: appointment.end_time || appointment.start_time,
+        status: appointment.status,
+        notes: appointment.notes || '',
+        newCustomerName: '',
+        newCustomerPhone: '',
+        newCustomerEmail: '',
+      });
     } else {
-      setCustomerId('');
-      setServiceId('');
-      setStaffId('');
-      setDate(defaultDate || format(new Date(), 'yyyy-MM-dd'));
-      setStartTime('09:00');
-      setStatus('pending');
-      setNotes('');
-      setNewCustomerName('');
-      setNewCustomerPhone('');
-      setNewCustomerEmail('');
+      reset({
+        customer_id: '',
+        service_id: '',
+        staff_id: 'any',
+        appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
+        start_time: '09:00',
+        end_time: '09:00',
+        status: 'pending',
+        notes: '',
+        newCustomerName: '',
+        newCustomerPhone: '',
+        newCustomerEmail: '',
+      });
     }
-  }, [appointment, open, defaultDate]);
+  }, [appointment, open, defaultDate, reset]);
 
   const fetchOptions = async () => {
     try {
@@ -99,68 +144,45 @@ export function AppointmentFormDialog({
       ] = await getFormOptions();
 
       if (svcError || stfError || custError) {
-        toast.error("Failed to load booking options");
+        toast.error('Failed to load booking options');
         return;
       }
 
       setServices(svc ?? []);
       setStaff(stf ?? []);
       setCustomers(cust ?? []);
-
     } catch (error) {
-      console.error(error);
       handleError(error, {
-        fallbackMessage: "Unexpected error while loading booking options"
+        fallbackMessage: 'Unexpected error while loading booking options',
       });
     }
   };
 
+  const serviceId = watch('service_id');
+  const startTime = watch('start_time');
+  const customerId = watch('customer_id');
   const selectedService = services.find((s) => s.id === serviceId);
   const endTime = selectedService
     ? format(addMinutes(new Date(`2000-01-01T${startTime}`), selectedService.duration), 'HH:mm')
     : startTime;
 
-  // TODO (Phase B):
-  // Move appointment creation workflow into appointments.service.ts.
-  // This function currently coordinates validation, customer creation,
-  // and appointment persistence. When scheduling logic (availability,
-  // overlap detection, reminders, recurring bookings) is added,
-  // migrate orchestration into a dedicated service.
-  const handleSubmit = async () => {
-    const validation = appointmentSchema.safeParse({
-      customer_id: customerId || crypto.randomUUID(),
-      service_id: serviceId,
-      staff_id: staffId === "any" ? crypto.randomUUID() : staffId,
-      appointment_date: date,
-      start_time: startTime,
-      end_time: endTime,
-      status,
-      notes,
-    });
-
-    if (!validation.success) {
-      toast.error(validation.error.issues[0].message);
-      return;
+  useEffect(() => {
+    if (selectedService) {
+      setValue('end_time', endTime);
     }
+  }, [selectedService, endTime, setValue]);
 
-    // Additional business rule for inline customer creation
-    if (!customerId && !newCustomerName.trim()) {
-      toast.error("Please select or create a customer.");
-      return;
-    }
-    setSaving(true);
+  const handleSave = handleSubmit(async (values) => {
+    let finalCustomerId = values.customer_id;
 
-    let finalCustomerId = customerId;
-
-    if (!customerId && newCustomerName) {
+    if (values.customer_id === '__new__' && values.newCustomerName.trim()) {
       const { data: newCust, error } = await createCustomerInline({
-        full_name: newCustomerName,
-        phone: newCustomerPhone,
-        email: newCustomerEmail,
+        full_name: values.newCustomerName,
+        phone: values.newCustomerPhone,
+        email: values.newCustomerEmail,
       });
       if (error) {
         toast.error('Failed to create customer');
-        setSaving(false);
         return;
       }
       finalCustomerId = newCust.id;
@@ -168,20 +190,19 @@ export function AppointmentFormDialog({
 
     const payload = {
       customer_id: finalCustomerId,
-      service_id: serviceId,
-      staff_id: staffId === 'any' ? null : staffId,
-      appointment_date: date,
-      start_time: startTime,
-      end_time: endTime,
-      status,
-      notes,
+      service_id: values.service_id,
+      staff_id: values.staff_id === 'any' ? null : values.staff_id,
+      appointment_date: values.appointment_date,
+      start_time: values.start_time,
+      end_time: values.end_time,
+      status: values.status,
+      notes: values.notes,
     };
 
     if (appointment) {
       const { error } = await updateAppointment(appointment.id, payload);
       if (error) {
         toast.error('Failed to update appointment');
-        setSaving(false);
         return;
       }
       toast.success('Appointment updated');
@@ -189,16 +210,15 @@ export function AppointmentFormDialog({
       const { error } = await createAppointment(payload);
       if (error) {
         toast.error('Failed to create appointment');
-        setSaving(false);
         return;
       }
       toast.success('Appointment created');
     }
 
-    setSaving(false);
+    reset();
     onOpenChange(false);
     onSaved();
-  };
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,105 +230,146 @@ export function AppointmentFormDialog({
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label>Customer</Label>
-            {customerId ? (
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.full_name} {c.phone ? `• ${c.phone}` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="space-y-2 rounded-lg border border-border p-3">
-                <Input
-                  placeholder="Customer name *"
-                  value={newCustomerName}
-                  onChange={(e) => setNewCustomerName(e.target.value)}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Phone"
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
-                  />
-                  <Input
-                    placeholder="Email"
-                    value={newCustomerEmail}
-                    onChange={(e) => setNewCustomerEmail(e.target.value)}
-                  />
-                </div>
-                {customers.length > 0 && (
-                  <button
-                    onClick={() => setCustomerId('__select__')}
-                    className="text-xs font-medium text-primary hover:text-primary"
-                  >
-                    Or select an existing customer
-                  </button>
-                )}
-              </div>
-            )}
-            {customerId === '__select__' && (
-              <Select value="" onValueChange={(v) => setCustomerId(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select existing customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.full_name} {c.phone ? `• ${c.phone}` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Controller
+              control={control}
+              name="customer_id"
+              render={({ field }) => (
+                <>
+                  {field.value === '__new__' || (field.value === '' && customers.length === 0) ? (
+                    <div className="space-y-2 rounded-lg border border-border p-3">
+                      <Input
+                        placeholder="Customer name *"
+                        {...register('newCustomerName')}
+                      />
+                      {errors.newCustomerName && (
+                        <p className="text-sm text-destructive">{errors.newCustomerName.message}</p>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          placeholder="Phone"
+                          {...register('newCustomerPhone')}
+                        />
+                        <Input
+                          placeholder="Email"
+                          {...register('newCustomerEmail')}
+                        />
+                      </div>
+                      {customers.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => field.onChange('__select__')}
+                          className="text-xs font-medium text-primary hover:text-primary"
+                        >
+                          Or select an existing customer
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <Select
+                      value={field.value === '__select__' ? '' : field.value}
+                      onValueChange={(v) => field.onChange(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.full_name} {c.phone ? `• ${c.phone}` : ''}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__new__">+ Create new customer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {field.value === '__select__' && (
+                    <Select
+                      value=""
+                      onValueChange={(v) => field.onChange(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select existing customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.full_name} {c.phone ? `• ${c.phone}` : ''}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__new__">+ Create new customer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {errors.customer_id && (
+                    <p className="text-sm text-destructive">{errors.customer_id.message}</p>
+                  )}
+                </>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Service</Label>
-            <Select value={serviceId} onValueChange={setServiceId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select service" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} • {s.duration}min • ${s.price}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="service_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} • {s.duration}min • ${s.price}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.service_id && (
+              <p className="text-sm text-destructive">{errors.service_id.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Staff member</Label>
-            <Select value={staffId} onValueChange={setStaffId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Any staff" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any staff</SelectItem>
-                {staff.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="staff_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any staff</SelectItem>
+                    {staff.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input type="date" {...register('appointment_date')} />
+              {errors.appointment_date && (
+                <p className="text-sm text-destructive">{errors.appointment_date.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Start time</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              <Input type="time" {...register('start_time')} />
+              {errors.start_time && (
+                <p className="text-sm text-destructive">{errors.start_time.message}</p>
+              )}
             </div>
           </div>
 
@@ -320,27 +381,36 @@ export function AppointmentFormDialog({
 
           <div className="space-y-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as Appointment['status'])}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={(v) => field.onChange(v as Appointment['status'])}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_VALUES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Notes (optional)</Label>
             <Textarea
               rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special requests..."
+              {...register('notes')}
             />
+            {errors.notes && (
+              <p className="text-sm text-destructive">{errors.notes.message}</p>
+            )}
           </div>
         </div>
 
@@ -348,8 +418,8 @@ export function AppointmentFormDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
-            {saving ? 'Saving...' : appointment ? 'Update' : 'Create'}
+          <Button onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : appointment ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>
