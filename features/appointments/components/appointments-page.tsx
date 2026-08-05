@@ -47,6 +47,7 @@ import {
 import { formatDate, formatTime, formatCurrency } from '@/lib/utils';
 import type { AppointmentWithRelations, Appointment } from '@/types/database';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
 
 export function AppointmentsPage() {
   const searchParams = useSearchParams();
@@ -69,19 +70,34 @@ export function AppointmentsPage() {
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    const { data, count, error } = await getAppointments({
-      page,
-      status: statusFilter,
-      search,
-    });
-    if (error) {
-      toast.error('Failed to load appointments');
+
+    try {
+      const { data, count, error } = await getAppointments({
+        page,
+        status: statusFilter,
+        search,
+      });
+
+      if (error) {
+        toast.error('Failed to load appointments');
+        setAppointments([]);
+        return;
+      }
+
+      setAppointments(
+        (data as AppointmentWithRelations[]) ?? []
+      );
+
+      setTotal(count ?? 0);
+
+    } catch (error) {
+        handleError(error, {
+          fallbackMessage: "Unexpected error while loading appointments."
+        });
       setAppointments([]);
-    } else {
-      setAppointments((data as unknown as AppointmentWithRelations[]) || []);
-      setTotal(count || 0);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [statusFilter, search, page]);
 
   useEffect(() => {
@@ -95,7 +111,7 @@ export function AppointmentsPage() {
       return;
     }
     toast.success(`Appointment marked as ${status}`);
-    fetchAppointments();
+    await fetchAppointments();
   };
 
   const handleDelete = async () => {
@@ -107,7 +123,7 @@ export function AppointmentsPage() {
     }
     toast.success('Appointment deleted');
     setDeleteId(null);
-    fetchAppointments();
+    await fetchAppointments();
   };
 
   const totalPages = Math.ceil(total / APPOINTMENTS_PAGE_SIZE);

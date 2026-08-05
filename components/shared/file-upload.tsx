@@ -5,6 +5,7 @@ import { Upload, File, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import Image from "next/image";
 
 interface FileUploaderProps {
   onFilesSelected?: (files: File[]) => void;

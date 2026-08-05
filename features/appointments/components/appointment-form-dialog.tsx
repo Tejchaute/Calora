@@ -28,6 +28,8 @@ import {
   createAppointment,
   updateAppointment,
 } from '../services/appointments.service';
+import { handleError } from '@/lib/errors/error-handler';
+import { appointmentSchema } from "../schemas/appointment.schema";
 
 interface AppointmentFormDialogProps {
   open: boolean;
@@ -89,10 +91,28 @@ export function AppointmentFormDialog({
   }, [appointment, open, defaultDate]);
 
   const fetchOptions = async () => {
-    const [{ data: svc }, { data: stf }, { data: cust }] = await getFormOptions();
-    setServices(svc || []);
-    setStaff(stf || []);
-    setCustomers(cust || []);
+    try {
+      const [
+        { data: svc, error: svcError },
+        { data: stf, error: stfError },
+        { data: cust, error: custError },
+      ] = await getFormOptions();
+
+      if (svcError || stfError || custError) {
+        toast.error("Failed to load booking options");
+        return;
+      }
+
+      setServices(svc ?? []);
+      setStaff(stf ?? []);
+      setCustomers(cust ?? []);
+
+    } catch (error) {
+      console.error(error);
+      handleError(error, {
+        fallbackMessage: "Unexpected error while loading booking options"
+      });
+    }
   };
 
   const selectedService = services.find((s) => s.id === serviceId);
@@ -100,13 +120,32 @@ export function AppointmentFormDialog({
     ? format(addMinutes(new Date(`2000-01-01T${startTime}`), selectedService.duration), 'HH:mm')
     : startTime;
 
+  // TODO (Phase B):
+  // Move appointment creation workflow into appointments.service.ts.
+  // This function currently coordinates validation, customer creation,
+  // and appointment persistence. When scheduling logic (availability,
+  // overlap detection, reminders, recurring bookings) is added,
+  // migrate orchestration into a dedicated service.
   const handleSubmit = async () => {
-    if (!serviceId) {
-      toast.error('Please select a service');
+    const validation = appointmentSchema.safeParse({
+      customer_id: customerId || crypto.randomUUID(),
+      service_id: serviceId,
+      staff_id: staffId === "any" ? crypto.randomUUID() : staffId,
+      appointment_date: date,
+      start_time: startTime,
+      end_time: endTime,
+      status,
+      notes,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
-    if (!customerId && !newCustomerName) {
-      toast.error('Please select or add a customer');
+
+    // Additional business rule for inline customer creation
+    if (!customerId && !newCustomerName.trim()) {
+      toast.error("Please select or create a customer.");
       return;
     }
     setSaving(true);

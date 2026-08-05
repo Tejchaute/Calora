@@ -24,6 +24,7 @@ import { formatTime, formatDate } from '@/lib/utils';
 import type { AppointmentWithRelations } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
 
 interface DashboardStats {
   todayAppointments: number;
@@ -45,28 +46,34 @@ export function DashboardPage() {
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const results = await getDashboardData(today);
-    const [
-      { count: todayCount },
-      { count: upcomingCount },
-      { count: customerCount },
-      { count: serviceCount },
-      { count: staffCount },
-      { data: todayData },
-      { data: upcomingData },
-    ] = results;
+    try{
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const dashboard = await getDashboardData(today);
 
-    setStats({
-      todayAppointments: todayCount || 0,
-      upcomingAppointments: upcomingCount || 0,
-      totalCustomers: customerCount || 0,
-      totalServices: serviceCount || 0,
-      totalStaff: staffCount || 0,
+      setStats({
+        todayAppointments: dashboard.todayAppointments.count ?? 0,
+        upcomingAppointments: dashboard.upcomingAppointments.count ?? 0,
+        totalCustomers: dashboard.customers.count ?? 0,
+        totalServices: dashboard.services.count ?? 0,
+        totalStaff: dashboard.staff.count ?? 0,
+      });
+
+      setTodayAppts(
+        dashboard.todayList.data as AppointmentWithRelations[] ?? []
+      );
+
+      setUpcomingAppts(
+        dashboard.upcomingList.data as AppointmentWithRelations[] ?? []
+      );
+
+      setLoading(false);
+    } catch (error) {
+    handleError(error, {
+        fallbackMessage: "Failed to load dashboard."
     });
-    setTodayAppts((todayData as unknown as AppointmentWithRelations[]) || []);
-    setUpcomingAppts((upcomingData as unknown as AppointmentWithRelations[]) || []);
-    setLoading(false);
+} finally {
+      setLoading(false);
+    }
   };
 
   const handleQuickStatus = async (

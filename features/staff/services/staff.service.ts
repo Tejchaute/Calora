@@ -43,9 +43,22 @@ export async function createStaff(
   if (error || !data) return { data: null, error };
 
   if (serviceIds.length > 0) {
-    await supabase
-      .from('staff_services')
-      .insert(serviceIds.map((service_id) => ({ staff_id: data.id, service_id })));
+    const { error: assignmentError } =
+      await supabase
+        .from("staff_services")
+        .insert(
+            serviceIds.map(service_id => ({
+                staff_id: data.id,
+                service_id,
+            }))
+        );
+
+    if (assignmentError) {
+      return {
+        data: null,
+        error: assignmentError,
+      };
+    }
   }
   return { data, error: null };
 }
@@ -58,11 +71,23 @@ export async function updateStaff(
   const { error } = await supabase.from('staff').update(payload).eq('id', id);
   if (error) return { error };
 
-  await supabase.from('staff_services').delete().eq('staff_id', id);
+  const { error: deleteAssignmentError } = await supabase
+    .from("staff_services")
+    .delete()
+    .eq("staff_id", id);
+
+  if (deleteAssignmentError) {
+    return {
+      error: deleteAssignmentError,
+    };
+  }
   if (serviceIds.length > 0) {
-    await supabase
+    const { error: assignmentError } = await supabase
       .from('staff_services')
       .insert(serviceIds.map((service_id) => ({ staff_id: id, service_id })));
+    if (assignmentError) {
+      return { error: assignmentError };
+    }
   }
   return { error: null };
 }

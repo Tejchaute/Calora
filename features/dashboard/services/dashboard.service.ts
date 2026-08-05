@@ -4,7 +4,15 @@ import { format } from 'date-fns';
 import type { Appointment } from '@/types/database';
 
 export async function getDashboardData(today: string) {
-  return Promise.all([
+  const [
+    todayAppointments,
+    upcomingAppointments,
+    customers,
+    services,
+    staff,
+    todayList,
+    upcomingList,
+  ] = await Promise.all([
     supabase
       .from('appointments')
       .select('*', { count: 'exact', head: true })
@@ -33,6 +41,31 @@ export async function getDashboardData(today: string) {
       .order('start_time', { ascending: true })
       .limit(5),
   ]);
+
+  const responses = [
+    todayAppointments,
+    upcomingAppointments,
+    customers,
+    services,
+    staff,
+    todayList,
+    upcomingList,
+  ];
+
+  const failed = responses.find(r => r.error);
+
+  if (failed) {
+    throw failed.error;
+  }
+  return {
+    todayAppointments,
+    upcomingAppointments,
+    customers,
+    services,
+    staff,
+    todayList,
+    upcomingList,
+  };
 }
 
 export async function updateAppointmentStatus(id: string, status: Appointment['status']) {

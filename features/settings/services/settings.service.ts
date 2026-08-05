@@ -33,27 +33,62 @@ export async function updateBusinessSettings(
   if (!business) return { error: { message: 'Business not found' } as any };
 
   if (payload.business_name !== undefined) {
-    await supabase.from('businesses').update({ name: payload.business_name }).eq('id', business.id);
+    const { error: businessNameError } =
+      await supabase
+        .from("businesses")
+        .update({
+            name: payload.business_name,
+        })
+        .eq("id", business.id);
+
+    if (businessNameError) {
+      return { error: businessNameError };
+    }
   }
 
   if (payload.booking_page_slug !== undefined) {
-    await supabase.from('businesses').update({ slug: payload.booking_page_slug }).eq('id', business.id);
+      const { error: bookingPageSlugError } =
+        await supabase
+          .from("businesses")
+          .update({
+              slug: payload.booking_page_slug,
+          })
+          .eq("id", business.id);
+
+      if (bookingPageSlugError) {
+        return { error: bookingPageSlugError };
+      }
   }
 
   const brandingUpdate: Partial<BrandingSettings> = {};
   if (payload.logo_url !== undefined) brandingUpdate.logo_url = payload.logo_url;
 
   if (Object.keys(brandingUpdate).length > 0) {
-    const { data: existingBranding } = await supabase
-      .from('branding_settings')
-      .select('id')
-      .eq('business_id', business.id)
+    const {
+      data: existingBranding,
+      error: brandingLookupError,
+    } = await supabase
+      .from("branding_settings")
+      .select("id")
+      .eq("business_id", business.id)
       .maybeSingle();
 
+    if (brandingLookupError) {
+      return {
+        error: brandingLookupError,
+      };
+    }
+
     if (existingBranding) {
-      await supabase.from('branding_settings').update(brandingUpdate).eq('id', existingBranding.id);
+      const { error: brandingError } = await supabase.from('branding_settings').update(brandingUpdate).eq('id', existingBranding.id);
+      if (brandingError) {
+        return { error: brandingError };
+      }
     } else {
-      await supabase.from('branding_settings').insert({ ...brandingUpdate, business_id: business.id });
+      const { error: brandingError } = await supabase.from('branding_settings').insert({ ...brandingUpdate, business_id: business.id });
+      if (brandingError) {
+        return { error: brandingError };
+      }
     }
   }
 

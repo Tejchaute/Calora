@@ -58,11 +58,31 @@ export function WorkingHoursPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [hours, staffList] = await getWorkingHoursData();
-    setHours((hours.data as WorkingHours[]) || []);
-    setStaff((staffList.data as Staff[]) || []);
-    setHolidays([]);
-    setLoading(false);
+
+    try {
+      const [hoursResult, staffResult] =
+        await getWorkingHoursData();
+
+      if (hoursResult.error) {
+        toast.error('Failed to load working hours');
+        return;
+      }
+
+      if (staffResult.error) {
+        toast.error('Failed to load staff');
+        return;
+      }
+
+      setHours((hoursResult.data as WorkingHours[]) ?? []);
+      setStaff((staffResult.data as Staff[]) ?? []);
+      setHolidays([]);
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Unexpected error while loading data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -83,7 +103,7 @@ export function WorkingHoursPage() {
       toast.error('Failed to update working hours');
       return;
     }
-    fetchData();
+    await fetchData();
   };
 
   const handleSaveAll = async () => {

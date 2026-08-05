@@ -37,6 +37,7 @@ import {
   isToday,
 } from 'date-fns';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -51,28 +52,41 @@ export function CalendarPage() {
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    let start: Date;
-    let end: Date;
 
-    if (view === 'month') {
-      start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
-      end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
-    } else if (view === 'week') {
-      start = startOfWeek(currentDate, { weekStartsOn: 0 });
-      end = endOfWeek(currentDate, { weekStartsOn: 0 });
-    } else {
-      start = currentDate;
-      end = currentDate;
+    try {
+      let start: Date;
+      let end: Date;
+
+      if (view === 'month') {
+        start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
+        end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
+      } else if (view === 'week') {
+        start = startOfWeek(currentDate, { weekStartsOn: 0 });
+        end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      } else {
+        start = currentDate;
+        end = currentDate;
+      }
+
+      const { data, error } = await getCalendarAppointments(start, end);
+
+      if (error) {
+        handleError(error, {
+          fallbackMessage: "Failed to load calendar"
+        });
+        setAppointments([]);
+        return;
+      }
+
+      setAppointments((data as AppointmentWithRelations[]) ?? []);
+    } catch (error) {
+        handleError(error, {
+          fallbackMessage: "Unexpected error while loading calendar appointments."
+        });
+      setAppointments([]);
+    } finally {
+      setLoading(false);
     }
-
-    const { data, error } = await getCalendarAppointments(start, end);
-
-    if (error) {
-      toast.error('Failed to load calendar');
-    } else {
-      setAppointments((data as unknown as AppointmentWithRelations[]) || []);
-    }
-    setLoading(false);
   }, [view, currentDate]);
 
   useEffect(() => {
@@ -200,7 +214,9 @@ export function CalendarPage() {
         onOpenChange={setFormOpen}
         appointment={editAppt}
         defaultDate={defaultDate}
-        onSaved={fetchAppointments}
+        onSaved={async () => {
+          await fetchAppointments();
+        }}
       />
     </div>
   );

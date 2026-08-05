@@ -38,6 +38,8 @@ import {
 import { getInitials } from '@/lib/utils';
 import type { Staff, Service } from '@/types/database';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
+import { staffSchema } from "../schemas/staff.schema";
 
 export function StaffPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -62,26 +64,62 @@ export function StaffPage() {
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await getStaff(search);
-    if (error) {
-      toast.error('Failed to load staff');
-    } else {
-      setStaff(data || []);
-      // Fetch service assignments
-      const { data: ssData } = await getStaffServiceAssignments();
+
+    try {
+      const { data, error } = await getStaff(search);
+
+      if (error) {
+        toast.error('Failed to load staff');
+        return;
+      }
+
+      setStaff(data ?? []);
+
+      const { data: ssData, error: ssError } =
+        await getStaffServiceAssignments();
+
+      if (ssError) {
+        handleError(ssError, {
+          fallbackMessage: "Failed to load service assignments"
+        });
+        return;
+      }
+
       const map: Record<string, string[]> = {};
-      (ssData || []).forEach((ss: { staff_id: string; service_id: string }) => {
-        if (!map[ss.staff_id]) map[ss.staff_id] = [];
+
+      (ssData ?? []).forEach((ss) => {
+        if (!map[ss.staff_id]) {
+          map[ss.staff_id] = [];
+        }
+
         map[ss.staff_id].push(ss.service_id);
       });
+
       setStaffServices(map);
+
+    } catch (error) {
+        handleError(error, {
+          fallbackMessage: "Failed to load staff."
+        });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [search]);
 
   const fetchServices = async () => {
-    const { data } = await getActiveServices();
-    setServices(data || []);
+    try {
+      const { data, error } = await getActiveServices();
+
+      if (error) {
+        toast.error('Failed to load services');
+        return;
+      }
+
+      setServices(data ?? []);
+    } catch (error) {
+      console.error(error);
+      toast.error('Unexpected error while loading services');
+    }
   };
 
   useEffect(() => {
@@ -115,8 +153,17 @@ export function StaffPage() {
   };
 
   const handleSave = async () => {
-    if (!fullName.trim()) {
-      toast.error('Staff name is required');
+    const validation = staffSchema.safeParse({
+      fullName,
+      email,
+      phone,
+      employee_code: '', // Assuming employee_code is not part of the form, set it to an empty string
+      role,
+      status,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
     setSaving(true);
@@ -150,7 +197,7 @@ export function StaffPage() {
 
     setSaving(false);
     setFormOpen(false);
-    fetchStaff();
+    await fetchStaff();
   };
 
   const handleDelete = async () => {
@@ -162,7 +209,7 @@ export function StaffPage() {
     }
     toast.success('Staff member deleted');
     setDeleteId(null);
-    fetchStaff();
+    await fetchStaff();
   };
 
   const toggleService = (serviceId: string) => {

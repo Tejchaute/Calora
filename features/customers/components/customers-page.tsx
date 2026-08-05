@@ -50,6 +50,8 @@ import {
 import { getInitials, formatDate, formatTime, formatCurrency } from '@/lib/utils';
 import type { Customer, AppointmentWithRelations } from '@/types/database';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
+import { customerSchema } from "../schemas/customer.schema";
 
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -73,15 +75,31 @@ export function CustomersPage() {
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-    const { data, count, error } = await getCustomers({ page, search });
-    if (error) {
-      toast.error('Failed to load customers');
-    } else {
-      setCustomers(data || []);
-      setTotal(count || 0);
+
+    try {
+      const { data, count, error } = await getCustomers({
+        page,
+        search,
+      });
+
+      if (error) {
+        handleError(error, {
+          fallbackMessage: "Failed to load customers"
+        });
+        return;
+      }
+
+      setCustomers(data ?? []);
+      setTotal(count ?? 0);
+
+    } catch (error) {
+        handleError(error, {
+          fallbackMessage: "Unexpected error while loading customers."
+        });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [search, page]);
+  }, [page, search]);
 
   useEffect(() => {
     fetchCustomers();
@@ -105,8 +123,15 @@ export function CustomersPage() {
   };
 
   const handleSave = async () => {
-    if (!fullName.trim()) {
-      toast.error('Customer name is required');
+    const validation = customerSchema.safeParse({
+      fullName,
+      email,
+      phone,
+      notes,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
     setSaving(true);
@@ -131,7 +156,7 @@ export function CustomersPage() {
     }
     setSaving(false);
     setFormOpen(false);
-    fetchCustomers();
+    await fetchCustomers();
   };
 
   const handleDelete = async () => {
@@ -143,15 +168,30 @@ export function CustomersPage() {
     }
     toast.success('Customer deleted');
     setDeleteId(null);
-    fetchCustomers();
+    await fetchCustomers();
   };
 
   const openDetail = async (customer: Customer) => {
     setDetailCustomer(customer);
     setDetailLoading(true);
-    const { data } = await getCustomerAppointments(customer.id);
-    setCustomerAppts((data as unknown as AppointmentWithRelations[]) || []);
-    setDetailLoading(false);
+
+    try {
+      const { data, error } = await getCustomerAppointments(customer.id);
+
+      if (error) {
+        toast.error('Failed to load customer history');
+        return;
+      }
+
+      setCustomerAppts(
+        (data as AppointmentWithRelations[]) ?? []
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error('Unexpected error while loading customer history');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const totalPages = Math.ceil(total / CUSTOMERS_PAGE_SIZE);

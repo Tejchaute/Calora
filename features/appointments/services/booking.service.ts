@@ -58,11 +58,20 @@ export async function findOrCreateCustomer(payload: {
     const orParts: string[] = [];
     if (payload.phone) orParts.push(`phone.eq.${payload.phone}`);
     if (payload.email) orParts.push(`email.eq.${payload.email}`);
-    const { data: existing } = await supabase
+    const {
+      data: existing,
+      error: lookupError,
+    } = await supabase
       .from('customers')
       .select('id')
       .or(orParts.join(','))
       .maybeSingle();
+    if (lookupError) {
+      return {
+        id: undefined,
+        error: lookupError,
+      };
+    }
     if (existing) return { id: existing.id as string, error: null as any };
   }
 

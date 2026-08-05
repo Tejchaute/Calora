@@ -19,6 +19,8 @@ import { getBusinessSettings, updateBusinessSettings } from '../services/setting
 import { CURRENCIES, TIMEZONES } from '@/constants';
 import type { BusinessSettings } from '@/types/database';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errors/error-handler';
+import { settingsSchema } from "../schemas/settings.schema";
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
@@ -31,31 +33,63 @@ export function SettingsPage() {
 
   const fetchSettings = async () => {
     setLoading(true);
-    const { data } = await getBusinessSettings();
-    setSettings(data);
-    setLoading(false);
+
+    try {
+      const { data, error } = await getBusinessSettings();
+
+      if (error) {
+        handleError(error, {
+          fallbackMessage: "Failed to load settings"
+        });
+        return;
+      }
+
+      setSettings(data);
+    } catch (error) {
+        handleError(error, {
+          fallbackMessage: "Unexpected error while loading settings."
+        });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
-    if (!settings) return;
-    setSaving(true);
-    const { error } = await updateBusinessSettings(settings.id, {
-      business_name: settings.business_name,
-      logo_url: settings.logo_url,
-      phone: settings.phone,
-      email: settings.email,
-      address: settings.address,
-      currency: settings.currency,
-      timezone: settings.timezone,
-      booking_page_slug: settings.booking_page_slug,
-    });
-    if (error) {
-      toast.error('Failed to save settings');
-      setSaving(false);
+    const validation = settingsSchema.safeParse(settings);
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
-    toast.success('Settings saved');
-    setSaving(false);
+    if (!settings) return;
+
+    setSaving(true);
+
+    try {
+      const { error } = await updateBusinessSettings(settings.id, {
+        business_name: settings.business_name,
+        logo_url: settings.logo_url,
+        phone: settings.phone,
+        email: settings.email,
+        address: settings.address,
+        currency: settings.currency,
+        timezone: settings.timezone,
+        booking_page_slug: settings.booking_page_slug,
+      });
+
+      if (error) {
+        toast.error('Failed to save settings');
+        return;
+      }
+
+      toast.success('Settings saved');
+    } catch (error) {
+      handleError(error, {
+        fallbackMessage: "Failed to load dashboard."
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const bookingUrl = settings?.booking_page_slug

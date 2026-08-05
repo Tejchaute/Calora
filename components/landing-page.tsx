@@ -163,7 +163,7 @@ export function LandingPage() {
     }
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 800));
-    toast.success("Thanks! We'll get back to you within 24 hours.");
+    toast.success("Thanks! We&apos;ll get back to you within 24 hours.");
     setContactForm({ name: '', email: '', message: '' });
     setSubmitting(false);
   };
@@ -430,7 +430,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Get in touch</h2>
-            <p className="mt-4 text-lg text-slate-600">Have a question? Want a demo? We'd love to hear from you.</p>
+            <p className="mt-4 text-lg text-slate-600">Have a question? Want a demo? We&apos;d love to hear from you.</p>
           </div>
           <form onSubmit={handleContactSubmit} className="mt-12 space-y-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="grid gap-4 sm:grid-cols-2">
