@@ -391,7 +391,7 @@ export function LandingPage() {
                     <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="mt-4 text-sm leading-relaxed text-slate-700">"{t.quote}"</p>
+                <p className="mt-4 text-sm leading-relaxed text-slate-700">&ldquo;{t.quote}&rdquo;</p>
                 <div className="mt-6 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
                     {t.name.split(' ').map((n) => n[0]).join('')}
