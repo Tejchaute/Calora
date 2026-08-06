@@ -68,7 +68,7 @@ export function LoginPage() {
         <span className="text-h5 text-foreground">Calora</span>
       </div>
 
-      <h1 className="text-h1 text-foreground">Welcome back</h1>
+      <h1 className="text-h2 text-foreground sm:text-h1">Welcome back</h1>
       <p className="mt-2 text-body text-muted-foreground">
         Sign in to your account to continue.
       </p>
@@ -95,7 +95,7 @@ export function LoginPage() {
                     type="email"
                     inputMode="email"
                     placeholder="you@example.com"
-                    className="h-12 transition-fast"
+                    className="h-12 transition-fast hover:border-foreground/20"
                     autoComplete="email"
                   />
                 </FormControl>
@@ -109,11 +109,11 @@ export function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-baseline justify-between gap-4">
+                <div className="flex items-baseline justify-between gap-4 text-small leading-none">
                   <FormLabel>Password</FormLabel>
                   <Link
                     href={AUTH_ROUTES.forgotPassword}
-                    className="text-small font-medium text-primary transition-fast hover:underline"
+                    className="rounded-sm font-medium text-primary transition-fast hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -123,14 +123,14 @@ export function LoginPage() {
                     <Input
                       {...field}
                       type={showPassword ? 'text' : 'password'}
-                      className="h-12 pr-12 transition-fast"
+                      className="h-12 pr-12 transition-fast hover:border-foreground/20"
                       autoComplete="current-password"
                     />
                   </FormControl>
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
                   >
@@ -147,7 +147,7 @@ export function LoginPage() {
             name="remember"
             render={({ field }) => (
               <FormItem className="space-y-0">
-                <FormLabel className="flex cursor-pointer items-center gap-3 py-2 text-small font-normal text-muted-foreground transition-fast hover:text-foreground">
+                <FormLabel className="-my-2 flex cursor-pointer items-center gap-3 py-2 text-small font-normal text-muted-foreground transition-fast hover:text-foreground">
                   <FormControl>
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
@@ -171,7 +171,7 @@ export function LoginPage() {
         {"Don't have an account? "}
         <Link
           href={AUTH_ROUTES.register}
-          className="font-medium text-primary transition-fast hover:underline"
+          className="rounded-sm font-medium text-primary transition-fast hover:underline"
         >
           Create account
         </Link>
