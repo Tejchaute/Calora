@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Calendar, Check } from 'lucide-react';
+import { Eye, EyeOff, Calendar, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -53,10 +53,12 @@ const PASSWORD_REQUIREMENTS = [
 export function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
+    mode: 'onTouched',
     defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
   });
 
@@ -96,20 +98,24 @@ export function RegisterPage() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-lg font-semibold text-foreground">Calora</span>
+        <span className="text-h5 text-foreground">Calora</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Start your 14-day free trial. No credit card required.</p>
+      <h1 className="text-h1 text-foreground">Create your account</h1>
+      <p className="mt-2 text-body text-muted-foreground">
+        Start your 14-day free trial. No credit card required.
+      </p>
 
-      {authError && (
-        <div className="mt-4">
-          <InlineAlert variant="error">{authError}</InlineAlert>
-        </div>
-      )}
+      <div aria-live="polite">
+        {authError && (
+          <div className="mt-5">
+            <InlineAlert variant="error">{authError}</InlineAlert>
+          </div>
+        )}
+      </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
           <FormField
             control={form.control}
             name="fullName"
@@ -117,16 +123,12 @@ export function RegisterPage() {
               <FormItem>
                 <FormLabel>Full name</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      placeholder="Jane Doe"
-                      className="pl-10"
-                      autoComplete="name"
-                      aria-describedby={undefined}
-                    />
-                  </div>
+                  <Input
+                    {...field}
+                    placeholder="Jane Doe"
+                    className="h-12 transition-fast"
+                    autoComplete="name"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,17 +142,14 @@ export function RegisterPage() {
               <FormItem>
                 <FormLabel>Email address</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="you@example.com"
-                      className="pl-10"
-                      autoComplete="email"
-                      aria-describedby={undefined}
-                    />
-                  </div>
+                  <Input
+                    {...field}
+                    type="email"
+                    inputMode="email"
+                    placeholder="you@example.com"
+                    className="h-12 transition-fast"
+                    autoComplete="email"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -163,31 +162,30 @@ export function RegisterPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
                       type={showPassword ? 'text' : 'password'}
                       placeholder="At least 8 characters"
-                      className="pl-10 pr-10"
+                      className="h-12 pr-12 transition-fast"
                       autoComplete="new-password"
-                      aria-describedby={undefined}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
                 <FormMessage />
 
                 {password.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
@@ -195,17 +193,17 @@ export function RegisterPage() {
                           style={{ width: `${strengthPercent}%` }}
                         />
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground">{strengthLabel}</span>
+                      <span className="text-small font-medium text-muted-foreground">{strengthLabel}</span>
                     </div>
-                    <ul className="space-y-1">
+                    <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
                       {PASSWORD_REQUIREMENTS.map((req) => {
                         const met = req.test(password);
                         return (
                           <li
                             key={req.label}
-                            className={`flex items-center gap-1.5 text-xs ${met ? 'text-success' : 'text-muted-foreground'}`}
+                            className={`flex items-center gap-1.5 text-small transition-fast ${met ? 'text-success' : 'text-muted-foreground'}`}
                           >
-                            <Check className={`h-3 w-3 ${met ? 'opacity-100' : 'opacity-30'}`} />
+                            <Check className={`h-3.5 w-3.5 transition-fast ${met ? 'opacity-100' : 'opacity-30'}`} />
                             {req.label}
                           </li>
                         );
@@ -223,34 +221,47 @@ export function RegisterPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Confirm password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
-                      type={showPassword ? 'text' : 'password'}
+                      type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Re-enter your password"
-                      className="pl-10"
+                      className="h-12 pr-12 transition-fast"
                       autoComplete="new-password"
-                      aria-describedby={undefined}
                     />
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showConfirmPassword}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <LoadingButton type="submit" className="w-full" loading={form.formState.isSubmitting}>
-            Create account
-            {!form.formState.isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+          <LoadingButton
+            type="submit"
+            className="h-12 w-full text-body font-medium shadow-elevation-2 transition-base hover:bg-primary/90 hover:shadow-elevation-3 active:scale-[0.99] focus-visible:shadow-elevation-3"
+            loading={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? 'Creating account…' : 'Create account'}
           </LoadingButton>
         </form>
       </Form>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-8 text-center text-small text-muted-foreground">
         Already have an account?{' '}
-        <Link href={AUTH_ROUTES.login} className="font-medium text-primary hover:text-primary">
+        <Link
+          href={AUTH_ROUTES.login}
+          className="font-medium text-primary transition-fast hover:underline"
+        >
           Sign in
         </Link>
       </p>
