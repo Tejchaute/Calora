@@ -1,68 +1,108 @@
 import { Calendar, ShieldCheck, Zap, TrendingUp } from 'lucide-react';
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { StatusBadge } from '@/components/shared/status';
+
 const TRUST_PRINCIPLES = [
   { icon: ShieldCheck, label: 'Secure authentication' },
   { icon: Zap, label: 'Fast & reliable scheduling' },
   { icon: TrendingUp, label: 'Built for growing businesses' },
 ];
 
+const PREVIEW_METRICS = [
+  { value: '12', label: 'Appointments' },
+  { value: '4', label: 'Staff working' },
+  { value: '3', label: 'New customers' },
+];
+
 const PREVIEW_APPOINTMENTS = [
-  { time: '09:00', name: 'Anita Sharma', service: 'Consultation' },
-  { time: '10:30', name: 'Marcus Lee', service: 'Follow-up' },
-  { time: '13:15', name: 'Priya Nair', service: 'Full session' },
+  {
+    time: '09:00',
+    initials: 'AS',
+    name: 'Anita Sharma',
+    service: 'Consultation · 30 min',
+    status: { label: 'Confirmed', variant: 'info' as const },
+  },
+  {
+    time: '10:30',
+    initials: 'ML',
+    name: 'Marcus Lee',
+    service: 'Follow-up · 45 min',
+    status: { label: 'Confirmed', variant: 'info' as const },
+  },
+  {
+    time: '13:15',
+    initials: 'PN',
+    name: 'Priya Nair',
+    service: 'Full session · 60 min',
+    status: { label: 'Pending', variant: 'warning' as const },
+  },
 ];
 
 function DashboardPreview() {
   return (
     <div
       aria-hidden="true"
-      className="overflow-hidden rounded-lg border border-border bg-card shadow-elevation-3"
+      className="overflow-hidden rounded-xl border border-border bg-card shadow-elevation-4"
     >
-      <div className="flex items-center gap-2 border-b border-border bg-muted px-4 py-3">
-        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+      <div className="flex items-center gap-3 border-b border-border bg-muted px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-error/60" />
+          <span className="h-2 w-2 rounded-full bg-warning/60" />
+          <span className="h-2 w-2 rounded-full bg-success/60" />
+        </div>
+        <div className="flex-1 rounded-full border border-border bg-background px-3 py-1 text-caption text-muted-foreground">
+          calora.app/dashboard
+        </div>
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="flex items-baseline justify-between">
-          <p className="text-small font-medium text-card-foreground">Today</p>
-          <p className="text-caption text-muted-foreground">Tuesday, 14 March</p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-small font-medium text-card-foreground">Today</p>
+            <p className="text-caption text-muted-foreground">Tuesday, 14 March</p>
+          </div>
+          <StatusBadge status="on-track" variant="success" label="On track" />
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-md bg-muted p-3">
-            <p className="text-h5 text-card-foreground">12</p>
-            <p className="text-caption text-muted-foreground">Appointments</p>
-          </div>
-          <div className="rounded-md bg-muted p-3">
-            <p className="text-h5 text-card-foreground">4</p>
-            <p className="text-caption text-muted-foreground">Staff working</p>
-          </div>
-          <div className="rounded-md bg-muted p-3">
-            <p className="text-h5 text-card-foreground">3</p>
-            <p className="text-caption text-muted-foreground">New customers</p>
-          </div>
+        <div className="grid grid-cols-3 gap-3">
+          {PREVIEW_METRICS.map((metric) => (
+            <div key={metric.label} className="rounded-lg border border-border bg-muted p-3">
+              <p className="text-h4 text-card-foreground">{metric.value}</p>
+              <p className="mt-1 text-caption text-muted-foreground">{metric.label}</p>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-2">
           {PREVIEW_APPOINTMENTS.map((appointment) => (
             <div
               key={appointment.time}
-              className="flex items-center gap-3 rounded-md border border-border p-3"
+              className="flex items-center gap-3 rounded-lg border border-border p-3"
             >
-              <span className="text-caption font-medium text-muted-foreground">
+              <span className="w-10 shrink-0 text-caption font-medium text-muted-foreground">
                 {appointment.time}
               </span>
-              <span className="h-8 w-1 rounded-full bg-primary" />
-              <span className="flex-1">
-                <span className="block text-small font-medium text-card-foreground">
+              <span className="h-10 w-1 shrink-0 rounded-full bg-primary" />
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary/10 text-caption font-medium text-primary">
+                  {appointment.initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-small font-medium text-card-foreground">
                   {appointment.name}
                 </span>
-                <span className="block text-caption text-muted-foreground">
+                <span className="block truncate text-caption text-muted-foreground">
                   {appointment.service}
                 </span>
               </span>
+              <StatusBadge
+                status={appointment.status.label}
+                variant={appointment.status.variant}
+                label={appointment.status.label}
+                className="shrink-0 text-caption font-medium"
+              />
             </div>
           ))}
         </div>
@@ -82,21 +122,21 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           <span className="text-h5 text-sidebar-foreground">Calora</span>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <p className="text-h3 text-sidebar-foreground">
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <p className="text-h4 text-sidebar-foreground">
               Smart appointment booking for every business.
             </p>
-            <p className="text-body text-sidebar-foreground/70">
+            <p className="text-small text-sidebar-foreground/70">
               Manage appointments, customers, and staff in one place.
             </p>
           </div>
 
           <DashboardPreview />
 
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {TRUST_PRINCIPLES.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2">
+              <li key={label} className="flex items-center gap-3">
                 <Icon className="h-4 w-4 shrink-0 text-sidebar-foreground/70" />
                 <span className="text-small text-sidebar-foreground/70">{label}</span>
               </li>
