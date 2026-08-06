@@ -68,21 +68,21 @@ export function LoginPage() {
         <span className="text-h5 text-foreground">Calora</span>
       </div>
 
-      <h1 className="text-h2 text-foreground">Welcome back</h1>
-      <p className="mt-4 text-body text-muted-foreground">
+      <h1 className="text-h1 text-foreground">Welcome back</h1>
+      <p className="mt-2 text-body text-muted-foreground">
         Sign in to your account to continue.
       </p>
 
       <div aria-live="polite">
         {authError && (
-          <div className="mt-6">
+          <div className="mt-5">
             <InlineAlert variant="error">{authError}</InlineAlert>
           </div>
         )}
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-10 space-y-6" noValidate>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
           <FormField
             control={form.control}
             name="email"
@@ -109,7 +109,15 @@ export function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <div className="flex items-baseline justify-between gap-4">
+                  <FormLabel>Password</FormLabel>
+                  <Link
+                    href={AUTH_ROUTES.forgotPassword}
+                    className="text-small font-medium text-primary transition-fast hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <FormControl>
                     <Input
@@ -138,11 +146,11 @@ export function LoginPage() {
             control={form.control}
             name="remember"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel className="text-small font-normal text-muted-foreground">
+              <FormItem className="space-y-0">
+                <FormLabel className="flex cursor-pointer items-center gap-3 py-2 text-small font-normal text-muted-foreground transition-fast hover:text-foreground">
+                  <FormControl>
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
                   Keep me signed in
                 </FormLabel>
               </FormItem>
@@ -151,7 +159,7 @@ export function LoginPage() {
 
           <LoadingButton
             type="submit"
-            className="h-12 w-full text-body font-medium transition-fast"
+            className="h-12 w-full text-body font-medium shadow-elevation-2 transition-base hover:bg-primary/90 hover:shadow-elevation-3"
             loading={isSubmitting}
           >
             {isSubmitting ? 'Signing in…' : 'Sign in'}
@@ -159,16 +167,7 @@ export function LoginPage() {
         </form>
       </Form>
 
-      <p className="mt-6 text-center text-body">
-        <Link
-          href={AUTH_ROUTES.forgotPassword}
-          className="font-medium text-primary transition-fast hover:underline"
-        >
-          Forgot password?
-        </Link>
-      </p>
-
-      <p className="mt-10 text-center text-small text-muted-foreground">
+      <p className="mt-8 text-center text-small text-muted-foreground">
         {"Don't have an account? "}
         <Link
           href={AUTH_ROUTES.register}
