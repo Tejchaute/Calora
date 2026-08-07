@@ -16,7 +16,7 @@ export function LoadingButton({
   ...props
 }: LoadingButtonProps) {
   return (
-    <Button disabled={disabled || loading} className={cn(className)} {...props}>
+    <Button disabled={disabled || loading} aria-busy={loading} className={cn(className)} {...props}>
       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {children}
     </Button>

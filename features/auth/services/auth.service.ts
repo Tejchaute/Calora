@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { AuthError } from '@/lib/auth/errors';
-import { getCurrentSession, refreshSession } from '@/lib/auth/session';
+import { getCurrentSession } from '@/lib/auth/session';
 import type { Profile } from '@/types/database';
 
 export async function signIn(email: string, password: string) {
@@ -17,15 +17,6 @@ export async function signUp(email: string, password: string, fullName: string) 
   });
   if (error) throw AuthError.fromSupabaseError(error);
   return data;
-}
-
-export async function createProfile(userId: string, fullName: string, email: string) {
-  const { error } = await supabase.from('profiles').insert({
-    id: userId,
-    full_name: fullName,
-    email,
-  });
-  if (error) throw AuthError.fromSupabaseError(error);
 }
 
 export async function resetPassword(email: string, redirectTo: string) {
@@ -49,10 +40,6 @@ export async function signOut() {
 
 export async function getSession() {
   return getCurrentSession();
-}
-
-export async function refreshCurrentSession() {
-  return refreshSession();
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {

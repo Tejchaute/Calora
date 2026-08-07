@@ -146,21 +146,33 @@ export interface Profile {
   updated_at: string;
 }
 
+export type BusinessStatus =
+  | 'trial'
+  | 'active'
+  | 'inactive'
+  | 'suspended';
+
 export interface Business {
   id: string;
   name: string;
   business_type_id: string | null;
   slug: string | null;
-  status: string;
+  status: BusinessStatus;
   created_at: string;
   updated_at: string;
 }
+
+export type BusinessRole =
+  | 'owner'
+  | 'admin'
+  | 'manager'
+  | 'staff';
 
 export interface BusinessMember {
   id: string;
   business_id: string;
   profile_id: string;
-  role: string;
+  role: BusinessRole;
   invited_by: string | null;
   status: string;
   created_at: string;
@@ -305,6 +317,12 @@ export interface CustomerTagAssignment {
 // ============================================================
 // Appointments
 // ============================================================
+export type AppointmentStatusType =
+  | 'pending'
+  | 'confirmed'
+  | 'completed'
+  | 'cancelled'
+  | 'no_show';
 
 export interface Appointment {
   id: string;
@@ -316,7 +334,7 @@ export interface Appointment {
   appointment_date: string;
   start_time: string;
   end_time: string;
-  status: string;
+  status: AppointmentStatusType;
   service_name_snapshot: string;
   duration_snapshot: number;
   price_snapshot: number;

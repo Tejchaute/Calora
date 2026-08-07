@@ -1,4 +1,60 @@
-// Supabase session management for Next.js middleware.
-// Reserved for authentication-aware route protection.
-// Will use @supabase/ssr when middleware patterns are needed.
-export {};
+import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+
+export async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return request.cookies.get(name)?.value;
+        },
+
+        set(name, value, options) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+
+          response = NextResponse.next({
+            request,
+          });
+
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+
+        remove(name, options) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+
+          response = NextResponse.next({
+            request,
+          });
+
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
+  );
+
+  await supabase.auth.getUser();
+
+  return response;
+}

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import Image from "next/image";
+import { text } from 'stream/consumers';
 
 interface FileUploaderProps {
   onFilesSelected?: (files: File[]) => void;
@@ -183,7 +184,11 @@ export function UploadProgress({ progress, fileName, className }: { progress: nu
     <div className={cn('space-y-2', className)}>
       {fileName && (
         <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <Loader2 className="mr-2 h-4 w-4"
+            style={{
+            animation: "spin 0.8s linear infinite",
+            color: "text-primary"
+            }} />
           <span className="text-sm text-foreground">{fileName}</span>
         </div>
       )}

@@ -91,15 +91,20 @@ export function ForgotPasswordPage() {
       </div>
 
       {sent ? (
-        <div>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
-            <MailCheck className="h-6 w-6 text-success" />
+        <div className="max-w-md">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15">
+            <MailCheck className="h-8 w-8 text-success" />
           </div>
-          <h1 className="mt-4 text-h1 text-foreground">Check your inbox</h1>
+          <h1 className="mt-6 text-h1 text-center text-foreground">Check your inbox</h1>
           <p className="mt-2 text-body text-muted-foreground">
-            {"We've sent a secure password reset link to "}
-            <span className="font-medium text-foreground">{submittedEmail}</span>.
+            We've sent a secure password reset link to
           </p>
+
+          <div className="mt-3 inline-flex rounded-md border border-border bg-muted px-3 py-2">
+            <span className="text-small font-medium text-foreground">
+              {submittedEmail}
+              </span> 
+          </div>
           <p className="mt-1 text-body text-muted-foreground">
             If you don't see it, check your spam folder.
           </p>
@@ -115,7 +120,7 @@ export function ForgotPasswordPage() {
           <div className="mt-8 space-y-3">
             <LoadingButton
               type="button"
-              className="h-12 w-full text-body font-medium shadow-elevation-2 transition-base hover:bg-primary/90 hover:shadow-elevation-3 active:scale-[0.99] focus-visible:shadow-elevation-3"
+              className="h-12 w-full text-body font-medium shadow-elevation-2 transition-base hover:bg-primary/90 hover:shadow-elevation-3 active:scale-[0.99] focus-visible:shadow-elevation-3 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-elevation-1"
               loading={resending}
               disabled={countdown > 0}
               onClick={handleResend}

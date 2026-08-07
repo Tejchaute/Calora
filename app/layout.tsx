@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, ThemeProvider } from '@/providers';
-import { SessionCookieSync } from '@/components/auth';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -43,7 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <SessionCookieSync />
             {children}
             <Toaster richColors position="top-right" />
           </AuthProvider>

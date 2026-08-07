@@ -75,9 +75,20 @@ ALTER TABLE staff_positions DROP CONSTRAINT IF EXISTS staff_positions_slug_key;
 ALTER TABLE staff_positions ALTER COLUMN business_id SET NOT NULL;
 
 -- Add FK to businesses
-ALTER TABLE staff_positions
-  ADD CONSTRAINT staff_positions_business_id_fkey
-  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'staff_positions_business_id_fkey'
+  ) THEN
+    ALTER TABLE staff_positions
+    ADD CONSTRAINT staff_positions_business_id_fkey
+    FOREIGN KEY (business_id)
+    REFERENCES businesses(id)
+    ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Add business-scoped unique on name
 ALTER TABLE staff_positions
@@ -118,9 +129,18 @@ ALTER TABLE resources ADD COLUMN IF NOT EXISTS capacity integer;
 -- ============================================================
 ALTER TABLE staff ADD COLUMN IF NOT EXISTS employee_code text;
 
-ALTER TABLE staff
-  ADD CONSTRAINT staff_business_employee_code_key
-  UNIQUE (business_id, employee_code);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'staff_business_employee_code_key'
+  ) THEN
+    ALTER TABLE staff
+    ADD CONSTRAINT staff_business_employee_code_key
+    UNIQUE (business_id, employee_code);
+  END IF;
+END $$;
 
 -- ============================================================
 -- 5. FIX ANONYMOUS INSERT SECURITY

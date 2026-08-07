@@ -1,9 +1,9 @@
 
 /*
-# Schedora Initial Database Schema
+# Calora Initial Database Schema
 
 ## Overview
-Full schema for the Schedora appointment booking and business management platform.
+Full schema for the Calora appointment booking and business management platform.
 
 ## New Tables
 

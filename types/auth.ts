@@ -28,6 +28,5 @@ export interface AuthState {
 export interface AuthContextValue extends AuthState {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  refreshSession: () => Promise<void>;
   clearError: () => void;
 }

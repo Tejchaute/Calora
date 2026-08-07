@@ -41,10 +41,14 @@ export function Sidebar({
     return activePath.startsWith(href);
   };
 
-  const renderNavItem = (item: NavItem, isNested = false) => {
+  const renderNavItem = (
+    item: NavItem,
+    isNested = false
+  ) => {
     const active = isActive(item.href);
+
     return (
-      <li key={item.href}>
+      <div key={item.href}>
         <Link
           href={item.href}
           onClick={() => {
@@ -53,7 +57,7 @@ export function Sidebar({
           }}
           aria-current={active ? 'page' : undefined}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
             isNested && 'ml-6 pl-3',
             active
               ? 'bg-primary text-primary-foreground'
@@ -61,13 +65,20 @@ export function Sidebar({
           )}
         >
           <item.icon className="h-5 w-5 flex-shrink-0" />
-          <span className="flex-1 truncate">{item.label}</span>
-          {item.badge && <span className="ml-auto">{item.badge}</span>}
+
+          <span>{item.label}</span>
+
+          {item.badge && item.badge}
         </Link>
-        {item.children && item.children.length > 0 && (
-          <ul className="mt-1 space-y-1">{item.children.map((child) => renderNavItem(child, true))}</ul>
-        )}
-      </li>
+
+        {item.children?.length ? (
+          <div className="mt-1 space-y-1">
+            {item.children.map((child) =>
+              renderNavItem(child, true)
+            )}
+          </div>
+        ) : null}
+      </div>
     );
   };
 

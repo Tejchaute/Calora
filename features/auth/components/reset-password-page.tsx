@@ -49,14 +49,20 @@ const PASSWORD_REQUIREMENTS = [
 ];
 
 export function ResetPasswordPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword,setShowPassword]=useState(false);
+
+  const [showConfirmPassword,setShowConfirmPassword]=useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const form = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: '', confirmPassword: '' },
-  });
+    mode: "onTouched",
+    defaultValues:{
+        password:"",
+        confirmPassword:"",
+    }
+  })
 
   const password = form.watch('password');
   const strength = useMemo(() => {
@@ -85,20 +91,20 @@ export function ResetPasswordPage() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-lg font-semibold text-foreground">Calora</span>
+        <span className="text-h5 text-foreground">Calora</span>
       </div>
 
       {success ? (
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
-            <Check className="h-6 w-6 text-success" />
+        <div className="max-w-md">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15">
+            <Check className="h-8 w-8 text-success" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-foreground">Password updated</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="mt-6 text-h1 text-center text-foreground">Password updated</h1>
+          <p className="mt-2 text-body text-muted-foreground">
             Your password has been changed successfully. You can now sign in with your new password.
           </p>
           <Link href={AUTH_ROUTES.login}>
-            <Button className="mt-6 w-full">
+            <Button className="mt-8 h-12 w-full text-body font-medium shadow-elevation-2 transition-base hover:bg-primary/90 hover:shadow-elevation-3 active:scale-[0.99] ">
               Continue to sign in
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -106,16 +112,18 @@ export function ResetPasswordPage() {
         </div>
       ) : (
         <>
-          <h1 className="text-2xl font-bold text-foreground">Set a new password</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="text-h1 text-foreground">Set a new password</h1>
+          <p className="mt-2 text-center text-body text-muted-foreground">
             Choose a strong password for your account.
           </p>
 
-          {authError && (
-            <div className="mt-4">
-              <InlineAlert variant="error">{authError}</InlineAlert>
-            </div>
-          )}
+          <div aria-live="polite">
+            {authError && (
+              <div className="mt-4">
+                <InlineAlert variant="error">{authError}</InlineAlert>
+              </div>
+            )}
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">
@@ -127,47 +135,45 @@ export function ResetPasswordPage() {
                     <FormLabel>New password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="At least 8 characters"
-                          className="pl-10 pr-10"
+                          className="h-12 pr-12 transition-fast"
                           autoComplete="new-password"
-                          aria-describedby={undefined}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                     </FormControl>
                     <FormMessage />
 
                     {password.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="mt-3 rounded-lg border border-border bg-muted/40 p-4 space-y-4">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                             <div
-                              className={`h-full rounded-full transition-all duration-300 ${strengthColor}`}
+                              className={`h-full rounded-full transition-base ${strengthColor}`}
                               style={{ width: `${strengthPercent}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground">{strengthLabel}</span>
+                          <span className="text-caption font-medium text-muted-foreground">{strengthLabel}</span>
                         </div>
-                        <ul className="space-y-1">
+                        <ul className="grid grid-cols-2 gap-2">
                           {PASSWORD_REQUIREMENTS.map((req) => {
                             const met = req.test(password);
                             return (
                               <li
                                 key={req.label}
-                                className={`flex items-center gap-1.5 text-xs ${met ? 'text-success' : 'text-muted-foreground'}`}
+                                className={`flex items-center gap-1.5 text-caption ${met ? 'text-success' : 'text-muted-foreground'}`}
                               >
-                                <Check className={`h-3 w-3 ${met ? 'opacity-100' : 'opacity-30'}`} />
+                                <Check className={`h-4 w-4 shrink-0 ${met ? 'opacity-100' : 'opacity-30'}`} />
                                 {req.label}
                               </li>
                             );
@@ -187,15 +193,33 @@ export function ResetPasswordPage() {
                     <FormLabel>Confirm new password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Re-enter your password"
-                          className="pl-10"
-                          autoComplete="new-password"
-                          aria-describedby={undefined}
-                        />
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="Re-enter your password"
+                            className="h-12 pr-12 transition-fast"
+                            autoComplete="new-password"
+                          />
+                        </FormControl>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(v => !v)}
+                          className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-fast hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label={
+                            showConfirmPassword
+                              ? 'Hide password'
+                              : 'Show password'
+                          }
+                          aria-pressed={showConfirmPassword}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -203,7 +227,17 @@ export function ResetPasswordPage() {
                 )}
               />
 
-              <LoadingButton type="submit" className="w-full" loading={form.formState.isSubmitting}>
+              <LoadingButton type="submit" className="
+                                            h-12
+                                            w-full
+                                            text-body
+                                            font-medium
+                                            shadow-elevation-2
+                                            transition-base
+                                            hover:bg-primary/90
+                                            hover:shadow-elevation-3
+                                            active:scale-[0.99]
+                                            " loading={form.formState.isSubmitting}>
                 Update password
                 {!form.formState.isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
               </LoadingButton>

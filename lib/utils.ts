@@ -19,9 +19,17 @@ export function formatDate(date: string | Date): string {
 }
 
 export function formatTime(time: string): string {
+  if (!time.includes(':')) return time;
+
   const [hours, minutes] = time.split(':').map(Number);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return time;
+  }
+
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
+
   return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
 }
 
@@ -30,8 +38,11 @@ export function formatDateTime(date: string, time: string): string {
 }
 
 export function getInitials(name: string): string {
+  if (!name?.trim()) return '?';
+
   return name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
@@ -51,26 +62,64 @@ export function generateTimeSlots(
   breakEnd?: string | null
 ): string[] {
   const slots: string[] = [];
+
   const [openH, openM] = openTime.split(':').map(Number);
   const [closeH, closeM] = closeTime.split(':').map(Number);
+
   let current = openH * 60 + openM;
-  const end = closeH * 60 + closeM;
+  let end = closeH * 60 + closeM;
+
+  // Overnight business support
+  // Example: 22:00 → 02:00
+  if (end <= current) {
+    end += 24 * 60;
+  }
+
+  let breakStartMinutes: number | null = null;
+  let breakEndMinutes: number | null = null;
+
+  if (breakStart && breakEnd) {
+    const [bsH, bsM] = breakStart.split(':').map(Number);
+    const [beH, beM] = breakEnd.split(':').map(Number);
+
+    breakStartMinutes = bsH * 60 + bsM;
+    breakEndMinutes = beH * 60 + beM;
+
+    // Overnight break support
+    if (breakEndMinutes <= breakStartMinutes) {
+      breakEndMinutes += 24 * 60;
+    }
+
+    // If business itself is overnight and break occurs after midnight
+    if (breakStartMinutes < openH * 60 + openM && end > 24 * 60) {
+      breakStartMinutes += 24 * 60;
+      breakEndMinutes += 24 * 60;
+    }
+  }
 
   while (current + durationMinutes <= end) {
-    const h = Math.floor(current / 60);
-    const m = current % 60;
+    const normalizedMinutes = current % (24 * 60);
+
+    const h = Math.floor(normalizedMinutes / 60);
+    const m = normalizedMinutes % 60;
+
     const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
     let inBreak = false;
-    if (breakStart && breakEnd) {
-      const [bsH, bsM] = breakStart.split(':').map(Number);
-      const [beH, beM] = breakEnd.split(':').map(Number);
-      const bsTotal = bsH * 60 + bsM;
-      const beTotal = beH * 60 + beM;
-      if (current >= bsTotal && current < beTotal) inBreak = true;
+
+    if (
+      breakStartMinutes !== null &&
+      breakEndMinutes !== null &&
+      current >= breakStartMinutes &&
+      current < breakEndMinutes
+    ) {
+      inBreak = true;
     }
 
-    if (!inBreak) slots.push(timeStr);
+    if (!inBreak) {
+      slots.push(timeStr);
+    }
+
     current += durationMinutes;
   }
 

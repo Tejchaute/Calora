@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { LoadingButton } from '@/components/shared/loading-button';
 import { InlineAlert } from '@/components/shared/inline-alert';
+import { signUp } from '../services/auth.service';
 import {
   Form,
   FormControl,
@@ -20,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { signUp, createProfile } from '../services/auth.service';
 import { AuthError } from '@/lib/auth/errors';
 import { AUTH_ROUTES } from '@/lib/auth/redirects';
 
@@ -76,9 +76,6 @@ export function RegisterPage() {
     setAuthError(null);
     try {
       const data = await signUp(values.email, values.password, values.fullName);
-      if (data.user) {
-        await createProfile(data.user.id, values.fullName, values.email);
-      }
       if (data.session) {
         toast.success('Account created! Welcome to Calora.');
         router.push(AUTH_ROUTES.dashboard);
@@ -167,7 +164,7 @@ export function RegisterPage() {
                     <Input
                       {...field}
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="At least 8 characters"
+                      placeholder="Create a password"
                       className="h-12 pr-12 transition-fast"
                       autoComplete="new-password"
                     />
@@ -226,7 +223,7 @@ export function RegisterPage() {
                     <Input
                       {...field}
                       type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Re-enter your password"
+                      placeholder="Confirm your password"
                       className="h-12 pr-12 transition-fast"
                       autoComplete="new-password"
                     />

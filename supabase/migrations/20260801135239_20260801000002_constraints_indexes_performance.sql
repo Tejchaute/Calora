@@ -153,7 +153,12 @@ BEGIN
   ) THEN
     ALTER TABLE working_hours
       ADD CONSTRAINT working_hours_open_close_check CHECK (
-        is_open = false OR close_time > open_time
+        is_open = false
+        OR (
+          open_time IS NOT NULL
+          AND close_time IS NOT NULL
+          AND close_time > open_time
+        )
       );
   END IF;
 END $$;
@@ -177,9 +182,13 @@ END $$;
 
 -- appointments.customer_id: CASCADE → RESTRICT (preserve appointment history)
 ALTER TABLE appointments
-  DROP CONSTRAINT IF EXISTS appointments_customer_id_fkey,
-  ADD CONSTRAINT appointments_customer_id_fkey
-  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT;
+DROP CONSTRAINT IF EXISTS appointments_customer_id_fkey;
+
+ALTER TABLE appointments
+ADD CONSTRAINT appointments_customer_id_fkey
+FOREIGN KEY (customer_id)
+REFERENCES customers(id)
+ON DELETE RESTRICT;
 
 -- ============================================================
 -- COMPOSITE INDEXES
@@ -203,7 +212,7 @@ CREATE INDEX IF NOT EXISTS appointments_business_staff_date_idx
 
 -- Customer search: by email within a business
 CREATE INDEX IF NOT EXISTS customers_business_email_idx
-  ON customers (business_id, email);
+ON customers (business_id, lower(email));
 
 -- Customer search: by phone within a business
 CREATE INDEX IF NOT EXISTS customers_business_phone_idx
@@ -232,3 +241,11 @@ CREATE INDEX IF NOT EXISTS notification_deliveries_business_created_idx
 -- Audit log: entries by business + time
 CREATE INDEX IF NOT EXISTS audit_logs_business_created_idx
   ON audit_logs (business_id, created_at);
+
+-- Customer history: appointments by customer within a business
+CREATE INDEX IF NOT EXISTS appointments_business_customer_idx
+ON appointments (business_id, customer_id);
+
+-- Service analytics: appointments by service within a business
+CREATE INDEX IF NOT EXISTS appointments_business_service_idx
+ON appointments (business_id, service_id);

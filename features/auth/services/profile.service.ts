@@ -4,10 +4,24 @@ import type { Profile } from '@/types/database';
 
 export async function updateProfile(
   userId: string,
-  payload: { full_name: string; phone: string; avatar_url: string }
-) {
-  const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
-  if (error) throw AuthError.fromSupabaseError(error);
+  payload: {
+    full_name: string;
+    phone: string;
+    avatar_url: string;
+  }
+): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    throw AuthError.fromSupabaseError(error);
+  }
+
+  return data;
 }
 
 export async function getProfileWithMeta(userId: string): Promise<{
