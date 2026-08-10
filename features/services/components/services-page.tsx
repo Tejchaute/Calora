@@ -14,8 +14,7 @@ import { toast } from 'sonner';
 import { handleError } from '@/lib/errors/error-handler';
 import { ServicesGrid } from "./services-grid";
 import { ServiceFormDialog } from "./service-form-dialog";
- 
-const SERVICE_COLORS = ['#2563EB', '#16A34A', '#EA580C', '#9333EA', '#DC2626', '#0891B2', '#CA8A04', '#DB2777'];
+
 
 export function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -40,13 +39,13 @@ export function ServicesPage() {
 
       setServices(data ?? []);
     } catch (error) {
-        handleError(error, {
-          fallbackMessage: "Failed to load services."
-        });
+      handleError(error, {
+        fallbackMessage: "Failed to load services."
+      });
     } finally {
       setLoading(false);
     }
-    }, [search]);
+  }, [search]);
 
   useEffect(() => {
     fetchServices();
@@ -124,7 +123,6 @@ export function ServicesPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         service={editService}
-        serviceColors={SERVICE_COLORS}
         onSuccess={fetchServices}
       />
       <DeleteServiceDialog

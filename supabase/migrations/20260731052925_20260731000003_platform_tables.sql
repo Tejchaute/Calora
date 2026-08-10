@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS branding_settings (
   custom_css text DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
-);
+);  
 
 ALTER TABLE branding_settings ENABLE ROW LEVEL SECURITY;
 

@@ -9,13 +9,9 @@ is derived from working_hours, time_off, and appointments.
 
 ## New Tables
 
-### service_categories (business-scoped lookup)
-Categories for grouping services within a business.
-- id, business_id (FK), name, slug, sort_order, created_at, updated_at
-
 ### services
 Services a business offers.
-- id, business_id (FK), category_id (FK nullable), name, description,
+- id, business_id (FK), name, description,
   duration (minutes), price, color, status, created_at, updated_at
 
 ### staff
@@ -34,7 +30,7 @@ Categories for grouping resources within a business.
 
 ### resources
 Physical resources (rooms, equipment) needed for appointments.
-- id, business_id (FK), category_id (FK nullable), name, description,
+- id, business_id (FK), name, description,
   quantity, status, created_at, updated_at
 
 ### customers
@@ -91,51 +87,15 @@ Core appointment records with service snapshots.
 */
 
 -- ============================================================
--- SERVICE CATEGORIES
--- ============================================================
-CREATE TABLE IF NOT EXISTS service_categories (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  slug text NOT NULL,
-  sort_order integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (business_id, slug)
-);
-
-CREATE INDEX IF NOT EXISTS service_categories_business_idx ON service_categories(business_id);
-
-ALTER TABLE service_categories ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "service_categories_select" ON service_categories;
-CREATE POLICY "service_categories_select" ON service_categories FOR SELECT
-  TO authenticated USING (is_business_member(business_id));
-
-DROP POLICY IF EXISTS "service_categories_insert" ON service_categories;
-CREATE POLICY "service_categories_insert" ON service_categories FOR INSERT
-  TO authenticated WITH CHECK (is_business_member(business_id));
-
-DROP POLICY IF EXISTS "service_categories_update" ON service_categories;
-CREATE POLICY "service_categories_update" ON service_categories FOR UPDATE
-  TO authenticated USING (is_business_member(business_id)) WITH CHECK (is_business_member(business_id));
-
-DROP POLICY IF EXISTS "service_categories_delete" ON service_categories;
-CREATE POLICY "service_categories_delete" ON service_categories FOR DELETE
-  TO authenticated USING (is_business_member(business_id));
-
--- ============================================================
 -- SERVICES
 -- ============================================================
 CREATE TABLE IF NOT EXISTS services (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-  category_id uuid REFERENCES service_categories(id) ON DELETE SET NULL,
   name text NOT NULL,
   description text DEFAULT '',
   duration integer NOT NULL DEFAULT 30 CHECK (duration > 0),
   price numeric(10,2) NOT NULL DEFAULT 0,
-  color text DEFAULT '#2563EB',
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -285,7 +245,6 @@ CREATE POLICY "resource_categories_delete" ON resource_categories FOR DELETE
 CREATE TABLE IF NOT EXISTS resources (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-  category_id uuid REFERENCES resource_categories(id) ON DELETE SET NULL,
   name text NOT NULL,
   description text DEFAULT '',
   quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
@@ -363,7 +322,6 @@ CREATE TABLE IF NOT EXISTS customer_tags (
   business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   name text NOT NULL,
   slug text NOT NULL,
-  color text DEFAULT '#6B7280',
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (business_id, slug)
@@ -561,7 +519,7 @@ DO $$
 DECLARE t text;
 BEGIN
   FOR t IN SELECT unnest(ARRAY[
-    'service_categories', 'services', 'staff', 'resources',
+    'services', 'staff', 'resources',
     'resource_categories', 'customers', 'customer_tags',
     'working_hours', 'time_off', 'appointments'
   ])

@@ -23,10 +23,6 @@ export const serviceSchema = z.object({
     .number()
     .min(0, "Price cannot be negative."),
 
-  color: z
-    .string()
-    .regex(/^#[A-Fa-f0-9]{6}$/, "Invalid color."),
-
   status: z.enum([
     "active",
     "inactive",

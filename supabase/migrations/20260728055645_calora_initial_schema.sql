@@ -139,7 +139,6 @@ CREATE TABLE IF NOT EXISTS services (
   description text DEFAULT '',
   duration integer NOT NULL DEFAULT 30 CHECK (duration > 0),
   price numeric(10,2) NOT NULL DEFAULT 0,
-  color text DEFAULT '#2563EB',
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

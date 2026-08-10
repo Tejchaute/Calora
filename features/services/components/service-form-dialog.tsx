@@ -41,8 +41,6 @@ interface ServiceFormDialogProps {
 
   service?: Service | null;
 
-  serviceColors: string[];
-
   onSuccess: () => Promise<void>;
 }
 
@@ -51,7 +49,6 @@ type ServiceFormValues = {
   description: string;
   duration: string;
   price: string;
-  color: string;
   status: "active" | "inactive";
 };
 
@@ -59,7 +56,6 @@ export function ServiceFormDialog({
   open,
   onOpenChange,
   service,
-  serviceColors,
   onSuccess,
 }: ServiceFormDialogProps) {
   const {
@@ -78,7 +74,6 @@ export function ServiceFormDialog({
       description: "",
       duration: "30",
       price: "0",
-      color: serviceColors[0],
       status: "active",
     },
   });
@@ -95,8 +90,7 @@ export function ServiceFormDialog({
         description: service.description ?? "",
         duration: String(service.duration),
         price: String(service.price),
-        color: service.color || serviceColors[0],
-        status: service.status,
+        status: service.status as "active" | "inactive",
       });
     } else {
       reset({
@@ -104,11 +98,10 @@ export function ServiceFormDialog({
         description: "",
         duration: "30",
         price: "0",
-        color: serviceColors[0],
         status: "active",
       });
     }
-  }, [open, service, reset, serviceColors]);
+  }, [open, service, reset]);
 
   const handleSave = handleSubmit(async (values) => {
 
@@ -117,7 +110,6 @@ export function ServiceFormDialog({
       description: values.description,
       duration: Number(values.duration),
       price: Number(values.price),
-      color: values.color,
       status: values.status as "active" | "inactive",
     };
 
@@ -139,7 +131,7 @@ export function ServiceFormDialog({
         const { error } = await createService(payload);
 
         if (error) {
-          toast.error("Failed to create service");
+          toast.error(error.message);
           return;
         }
 
@@ -151,9 +143,9 @@ export function ServiceFormDialog({
       await onSuccess();
 
     } catch (error) {
-        handleError(error, {
-          fallbackMessage: "Failed to save service.",
-        });
+      handleError(error, {
+        fallbackMessage: "Failed to save service.",
+      });
     }
 
   });
@@ -216,7 +208,7 @@ export function ServiceFormDialog({
 
               <Input
                 type="number"
-                  {...register("duration")}
+                {...register("duration")}
               />
 
             </div>
@@ -229,32 +221,6 @@ export function ServiceFormDialog({
                 type="number"
                 {...register("price")}
               />
-
-            </div>
-
-          </div>
-
-          <div className="space-y-2">
-
-            <Label>Color</Label>
-
-            <div className="flex flex-wrap gap-2">
-
-              {serviceColors.map((c) => (
-
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setValue("color", c)}
-                  className={`h-8 w-8 rounded-full ${
-                    watch("color") === c
-                      ? "ring-2 ring-offset-2 ring-muted-foreground"
-                      : ""
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-
-              ))}
 
             </div>
 
@@ -305,8 +271,8 @@ export function ServiceFormDialog({
             {isSubmitting
               ? "Saving..."
               : service
-              ? "Update"
-              : "Create"}
+                ? "Update"
+                : "Create"}
           </Button>
 
         </DialogFooter>

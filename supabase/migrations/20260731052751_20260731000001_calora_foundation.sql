@@ -153,7 +153,6 @@ CREATE TABLE IF NOT EXISTS appointment_statuses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL UNIQUE,
   slug text NOT NULL UNIQUE,
-  color text DEFAULT '#6B7280',
   sort_order integer NOT NULL DEFAULT 0,
   is_system boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),

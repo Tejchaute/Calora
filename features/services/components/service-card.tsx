@@ -28,17 +28,6 @@ export function ServiceCard({
     <Card className="transition-shadow hover:shadow-md">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-xl"
-            style={{
-              backgroundColor: `${service.color || "#2563EB"}15`,
-            }}
-          >
-            <Scissors
-              className="h-6 w-6"
-              style={{ color: service.color || "#2563EB" }}
-            />
-          </div>
 
           <Badge
             variant={
