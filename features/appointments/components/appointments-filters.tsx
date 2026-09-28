@@ -15,6 +15,7 @@ interface AppointmentsFiltersProps {
   onSearchChange: (value: string) => void;
   status: string;
   onStatusChange: (value: string) => void;
+  view: 'active' | 'history';
 }
 
 export function AppointmentsFilters({
@@ -22,6 +23,7 @@ export function AppointmentsFilters({
   onSearchChange,
   status,
   onStatusChange,
+  view,
 }: AppointmentsFiltersProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -41,10 +43,20 @@ export function AppointmentsFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All statuses</SelectItem>
-          <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="confirmed">Confirmed</SelectItem>
-          <SelectItem value="completed">Completed</SelectItem>
-          <SelectItem value="cancelled">Cancelled</SelectItem>
+          {view === 'active' ? (
+            <>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+            </>
+          ) : (
+            <>
+              <SelectItem value="pending">Past pending</SelectItem>
+              <SelectItem value="confirmed">Past confirmed</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="no_show">No show</SelectItem>
+            </>
+          )}
         </SelectContent>
       </Select>
     </div>

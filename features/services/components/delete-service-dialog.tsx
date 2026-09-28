@@ -1,4 +1,4 @@
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 
 interface DeleteServiceDialogProps {
   open: boolean;
@@ -16,8 +16,8 @@ export function DeleteServiceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Delete service?"
-      description="This action cannot be undone. If this service has existing appointments, they will be preserved."
-      confirmLabel="Delete"
+      description="This permanently removes the service. Services already used by appointments should be deactivated instead so appointment history is preserved."
+      confirmLabel="Delete permanently"
       onConfirm={onConfirm}
     />
   );

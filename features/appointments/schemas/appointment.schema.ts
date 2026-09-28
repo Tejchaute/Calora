@@ -16,7 +16,6 @@ export const appointmentSchema = z
       'confirmed',
       'completed',
       'cancelled',
-      'scheduled',
       'no_show',
     ]),
 

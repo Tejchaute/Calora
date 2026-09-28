@@ -1,34 +1,46 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppointmentsFilters } from './appointments-filters';
 import { AppointmentsTable } from './appointments-table';
 import { AppointmentFormDialog } from './appointment-form-dialog';
-import { DeleteAppointmentDialog } from './delete-appointment-dialog';
 import {
   getAppointments,
   updateAppointmentStatus,
-  deleteAppointment,
   APPOINTMENTS_PAGE_SIZE,
+  type AppointmentView,
 } from '../services/appointments.service';
 import { handleError } from '@/lib/errors/error-handler';
 import { toast } from 'sonner';
 import type { AppointmentWithRelations, Appointment } from '@/types/database';
+import { useBusiness } from '@/features/business/hooks/use-business';
 
 export function AppointmentsPage() {
   const searchParams = useSearchParams();
-  const [appointments, setAppointments] = useState<AppointmentWithRelations[]>([]);
+  const { business } = useBusiness();
+  const [appointments, setAppointments] = useState<AppointmentWithRelations[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [view, setView] = useState<AppointmentView>('active');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [editAppt, setEditAppt] = useState<Appointment | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
+  const requestIdRef = useRef(0);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
@@ -38,13 +50,21 @@ export function AppointmentsPage() {
   }, [searchParams]);
 
   const fetchAppointments = useCallback(async () => {
-    setLoading(true);
+    if (!business?.id) {
+      return;
+    }
+    const requestId = ++requestIdRef.current;
+    if (!hasLoadedRef.current) setLoading(true);
     try {
       const { data, count, error } = await getAppointments({
+        businessId: business.id,
         page,
         status: statusFilter,
-        search,
+        search: debouncedSearch,
+        view,
       });
+
+      if (requestId !== requestIdRef.current) return;
 
       if (error) {
         handleError(error, { fallbackMessage: 'Failed to load appointments' });
@@ -52,18 +72,26 @@ export function AppointmentsPage() {
         return;
       }
 
-      setAppointments(data as AppointmentWithRelations[] ?? []);
+      setAppointments((data as AppointmentWithRelations[]) ?? []);
       setTotal(count ?? 0);
     } catch (error) {
-      handleError(error, { fallbackMessage: 'Unexpected error while loading appointments.' });
+      handleError(error, {
+        fallbackMessage: 'Unexpected error while loading appointments.',
+      });
       setAppointments([]);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        hasLoadedRef.current = true;
+        setLoading(false);
+      }
     }
-  }, [statusFilter, search, page]);
+  }, [business?.id, statusFilter, debouncedSearch, page, view]);
 
   useEffect(() => {
-    fetchAppointments();
+    void fetchAppointments();
+    return () => {
+      requestIdRef.current += 1;
+    };
   }, [fetchAppointments]);
 
   const openForm = (appointment?: Appointment) => {
@@ -71,27 +99,38 @@ export function AppointmentsPage() {
     setFormOpen(true);
   };
 
-  const handleStatusChange = async (id: string, status: Appointment['status']) => {
-    const { error } = await updateAppointmentStatus(id, status);
+  const handleStatusChange = async (
+    id: string,
+    status: Appointment['status'],
+  ) => {
+    if (!business?.id || pendingIds.has(id)) return;
+
+    setPendingIds((current) => new Set(current).add(id));
+
+    const { error } = await updateAppointmentStatus(business.id, id, status);
+
     if (error) {
       toast.error('Failed to update status');
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
       return;
     }
     toast.success(`Appointment marked as ${status}`);
-    await fetchAppointments();
+    setAppointments((current) =>
+      current.map((appointment) =>
+        appointment.id === id ? { ...appointment, status } : appointment,
+      ),
+    );
+    setPendingIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await deleteAppointment(deleteId);
-    if (error) {
-      toast.error('Failed to delete appointment');
-      return;
-    }
-    toast.success('Appointment deleted');
-    setDeleteId(null);
-    await fetchAppointments();
-  };
 
   const totalPages = Math.ceil(total / APPOINTMENTS_PAGE_SIZE);
 
@@ -112,18 +151,49 @@ export function AppointmentsPage() {
 
       <AppointmentsFilters
         search={search}
-        onSearchChange={(v) => { setSearch(v); setPage(0); }}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(0);
+        }}
         status={statusFilter}
-        onStatusChange={(v) => { setStatusFilter(v); setPage(0); }}
+        view={view}
+        onStatusChange={(v) => {
+          setStatusFilter(v);
+          setPage(0);
+        }}
       />
+
+      <div
+        className="inline-flex rounded-lg border border-border bg-muted/30 p-1"
+        role="tablist"
+        aria-label="Appointment view"
+      >
+        {(['active', 'history'] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="tab"
+            aria-selected={view === option}
+            onClick={() => {
+              setView(option);
+              setStatusFilter('all');
+              setPage(0);
+            }}
+            className={`min-h-9 rounded-md px-4 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
 
       <AppointmentsTable
         appointments={appointments}
         loading={loading}
         hasFilters={search !== '' || statusFilter !== 'all'}
+        view={view}
         onEdit={openForm}
-        onDelete={setDeleteId}
         onStatusChange={handleStatusChange}
+        pendingIds={pendingIds}
         onCreate={() => openForm()}
       />
 
@@ -158,14 +228,10 @@ export function AppointmentsPage() {
 
       <AppointmentFormDialog
         open={formOpen}
+        businessId={business?.id}
         onOpenChange={setFormOpen}
         appointment={editAppt}
         onSaved={fetchAppointments}
-      />
-      <DeleteAppointmentDialog
-        open={!!deleteId}
-        onOpenChange={(o) => !o && setDeleteId(null)}
-        onConfirm={handleDelete}
       />
     </div>
   );

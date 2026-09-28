@@ -10,6 +10,42 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 }
 
+export function getDateInTimeZone(
+  timeZone: string,
+  date = new Date()
+): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function getTimeInTimeZone(
+  timeZone: string,
+  date = new Date()
+): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+
+  return `${values.hour}:${values.minute}`;
+}
+
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
   if (isToday(d)) return 'Today';
@@ -110,8 +146,8 @@ export function generateTimeSlots(
     if (
       breakStartMinutes !== null &&
       breakEndMinutes !== null &&
-      current >= breakStartMinutes &&
-      current < breakEndMinutes
+      current < breakEndMinutes &&
+      current + durationMinutes > breakStartMinutes
     ) {
       inBreak = true;
     }
@@ -129,8 +165,9 @@ export function generateTimeSlots(
 export function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = h * 60 + m + minutes;
-  const newH = Math.floor(total / 60) % 24;
-  const newM = total % 60;
+  const normalized = ((total % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const newH = Math.floor(normalized / 60);
+  const newM = normalized % 60;
   return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
 

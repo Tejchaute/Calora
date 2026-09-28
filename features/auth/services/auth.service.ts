@@ -53,7 +53,48 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
-export async function updatePassword(password: string) {
-  const { error } = await supabase.auth.updateUser({ password });
+export async function updatePassword(
+  currentPassword: string,
+  newPassword: string
+) {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw AuthError.fromSupabaseError(userError);
+  }
+
+  if (!user?.email) {
+    throw new Error('Unable to determine the current account email.');
+  }
+
+  // Re-authenticate before allowing the password change.
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+
+  if (verifyError) {
+    throw new Error('Current password is incorrect.');
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    throw AuthError.fromSupabaseError(error);
+  }
+}
+
+/**
+ * Used by the reset-password page (arrived via email magic link).
+ * The Supabase session is already established by the link token,
+ * so no current-password re-authentication is required.
+ */
+export async function setNewPassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw AuthError.fromSupabaseError(error);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -26,22 +26,30 @@ import {
 import type { Service, Staff, Customer, Appointment } from '@/types/database';
 import {
   getFormOptions,
+  getStaffForService,
   createCustomerInline,
   createAppointment,
   updateAppointment,
+  updateAppointmentMetadata,
+  isAppointmentConflictError,
+  getAppointmentAvailabilityMessage,
 } from '../services/appointments.service';
 import { handleError } from '@/lib/errors/error-handler';
 import { appointmentSchema } from '../schemas/appointment.schema';
+import { useBusiness } from '@/features/business/hooks/use-business';
+import { useBusinessCurrency } from '@/features/business/hooks/use-business-currency';
 
 const ANY_STAFF = 'any';
 const NEW_CUSTOMER = '__new__';
 const SELECT_CUSTOMER = '__select__';
 
 interface AppointmentFormDialogProps {
+  businessId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointment?: Appointment | null;
   defaultDate?: string;
+  defaultTime?: string;
   onSaved: () => void;
 }
 
@@ -71,11 +79,14 @@ export function AppointmentFormDialog({
   onOpenChange,
   appointment,
   defaultDate,
+  defaultTime,
   onSaved,
 }: AppointmentFormDialogProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const { business } = useBusiness();
+  const { format: formatBusinessCurrency } = useBusinessCurrency();
 
   const {
     register,
@@ -92,8 +103,8 @@ export function AppointmentFormDialog({
       service_id: '',
       staff_id: ANY_STAFF,
       appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
-      start_time: '09:00',
-      end_time: '09:00',
+      start_time: defaultTime || '09:00',
+      end_time: defaultTime || '09:00',
       status: 'pending',
       notes: '',
       newCustomerName: '',
@@ -104,8 +115,10 @@ export function AppointmentFormDialog({
 
   useEffect(() => {
     if (!open) return;
+    if (!business?.id) return;
+
     fetchOptions();
-  }, [open]);
+  }, [open, business?.id, appointment?.service_id]);
 
   useEffect(() => {
     if (appointment) {
@@ -116,7 +129,7 @@ export function AppointmentFormDialog({
         appointment_date: appointment.appointment_date,
         start_time: appointment.start_time,
         end_time: appointment.end_time || appointment.start_time,
-        status: appointment.status,
+        status: appointment.status === 'scheduled' ? 'pending' : appointment.status,
         notes: appointment.notes || '',
         newCustomerName: '',
         newCustomerPhone: '',
@@ -128,8 +141,8 @@ export function AppointmentFormDialog({
         service_id: '',
         staff_id: ANY_STAFF,
         appointment_date: defaultDate || format(new Date(), 'yyyy-MM-dd'),
-        start_time: '09:00',
-        end_time: '09:00',
+        start_time: defaultTime || '09:00',
+        end_time: defaultTime || '09:00',
         status: 'pending',
         notes: '',
         newCustomerName: '',
@@ -137,15 +150,20 @@ export function AppointmentFormDialog({
         newCustomerEmail: '',
       });
     }
-  }, [appointment, open, defaultDate, reset]);
+  }, [appointment, open, defaultDate, defaultTime, reset]);
 
   const fetchOptions = async () => {
+    if (!business?.id) return;
     try {
       const [
         { data: svc, error: svcError },
         { data: stf, error: stfError },
         { data: cust, error: custError },
-      ] = await getFormOptions();
+      ] = await getFormOptions(
+        business.id,
+        appointment?.service_id,
+        appointment?.staff_id ?? undefined
+      );
 
       if (svcError || stfError || custError) {
         handleError(svcError || stfError || custError, {
@@ -164,9 +182,52 @@ export function AppointmentFormDialog({
     }
   };
 
+  const fetchStaffForService = useCallback(
+    async (serviceId: string) => {
+      if (!business?.id || !serviceId) {
+        setStaff([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await getStaffForService(
+          business.id,
+          serviceId,
+          appointment?.staff_id ?? undefined
+        );
+
+        if (error) {
+          handleError(error, {
+            fallbackMessage: 'Failed to load staff for this service',
+          });
+
+          setStaff([]);
+          return;
+        }
+
+        setStaff(data ?? []);
+      } catch (error) {
+        handleError(error, {
+          fallbackMessage: 'Unexpected error while loading staff',
+        });
+
+        setStaff([]);
+      }
+    },
+    [business?.id, appointment?.staff_id]
+  );
+
   const serviceId = watch('service_id');
+  useEffect(() => {
+    if (!open) return;
+    if (!serviceId) {
+      setStaff([]);
+      return;
+    }
+
+    fetchStaffForService(serviceId);
+  }, [open, serviceId, fetchStaffForService]);
   const startTime = watch('start_time');
-  const customerId = watch('customer_id');
   const selectedService = services.find((s) => s.id === serviceId);
   const endTime = selectedService
     ? format(addMinutes(new Date(`2000-01-01T${startTime}`), selectedService.duration), 'HH:mm')
@@ -179,45 +240,126 @@ export function AppointmentFormDialog({
   }, [selectedService, endTime, setValue]);
 
   const handleSave = handleSubmit(async (values) => {
+    if (!business?.id) {
+      toast.error('Business not loaded');
+      return;
+    }
+
     let finalCustomerId = values.customer_id;
 
-    if (values.customer_id === NEW_CUSTOMER && values.newCustomerName.trim()) {
-      const { data: newCust, error } = await createCustomerInline({
-        full_name: values.newCustomerName,
-        phone: values.newCustomerPhone,
-        email: values.newCustomerEmail,
-      });
-      if (error) {
-        handleError(error, { fallbackMessage: 'Failed to create customer' });
+    if (values.customer_id === NEW_CUSTOMER) {
+      if (!values.newCustomerName.trim()) {
+        toast.error('Customer name is required');
         return;
       }
+
+      const { data: newCust, error } = await createCustomerInline(
+        business.id,
+        {
+          full_name: values.newCustomerName.trim(),
+          phone: values.newCustomerPhone.trim(),
+          email: values.newCustomerEmail.trim().toLowerCase(),
+        }
+      );
+
+      if (error) {
+        handleError(error, {
+          fallbackMessage: 'Failed to create customer',
+        });
+        return;
+      }
+
       finalCustomerId = newCust.id;
+    }
+
+    const selectedService = services.find(
+      (service) => service.id === values.service_id
+    );
+
+    if (!selectedService) {
+      toast.error('Please select a valid service');
+      return;
     }
 
     const payload = {
       customer_id: finalCustomerId,
       service_id: values.service_id,
-      staff_id: values.staff_id === ANY_STAFF ? null : values.staff_id,
+      staff_id:
+        values.staff_id === ANY_STAFF
+          ? null
+          : values.staff_id,
+
       appointment_date: values.appointment_date,
       start_time: values.start_time,
       end_time: values.end_time,
+
+      service_name_snapshot: selectedService.name,
+      duration_snapshot: selectedService.duration,
+      price_snapshot: selectedService.price,
+
       status: values.status,
       notes: values.notes,
     };
 
     if (appointment) {
-      const { error } = await updateAppointment(appointment.id, payload);
+      const scheduleUnchanged =
+        appointment.customer_id === payload.customer_id &&
+        appointment.service_id === payload.service_id &&
+        (appointment.staff_id || null) === (payload.staff_id || null) &&
+        appointment.appointment_date === payload.appointment_date &&
+        appointment.start_time.slice(0, 5) === payload.start_time &&
+        appointment.end_time.slice(0, 5) === payload.end_time;
+
+      const { error } = scheduleUnchanged
+        ? await updateAppointmentMetadata(
+            business.id,
+            appointment.id,
+            payload.notes,
+            payload.status
+          )
+        : await updateAppointment(
+            business.id,
+            appointment.id,
+            payload
+          );
+
       if (error) {
-        handleError(error, { fallbackMessage: 'Failed to update appointment' });
+        const availabilityMessage = getAppointmentAvailabilityMessage(error);
+        if (availabilityMessage) {
+          toast.error(availabilityMessage);
+        } else if (isAppointmentConflictError(error)) {
+          toast.error('This time is no longer available.');
+        } else {
+          handleError(error, {
+            fallbackMessage: 'Failed to update appointment',
+          });
+        }
+
         return;
       }
+
       toast.success('Appointment updated');
     } else {
-      const { error } = await createAppointment(payload);
+      const { error } = await createAppointment(
+        business.id,
+        payload
+      );
+
       if (error) {
-        handleError(error, { fallbackMessage: 'Failed to create appointment' });
+        const availabilityMessage = getAppointmentAvailabilityMessage(error);
+        if (availabilityMessage) {
+          toast.error(availabilityMessage);
+        } else if (isAppointmentConflictError(error)) {
+          toast.error('This time is no longer available.');
+        } else {
+          handleError(error, {
+            fallbackMessage: 'Failed to create appointment',
+          });
+        }
+
         return;
       }
+
       toast.success('Appointment created');
     }
 
@@ -250,7 +392,7 @@ export function AppointmentFormDialog({
                       {errors.newCustomerName && (
                         <p className="text-sm text-destructive">{errors.newCustomerName.message}</p>
                       )}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <Input
                           placeholder="Phone"
                           {...register('newCustomerPhone')}
@@ -316,41 +458,84 @@ export function AppointmentFormDialog({
 
           <div className="space-y-2">
             <Label>Service</Label>
-            <Controller
-              control={control}
-              name="service_id"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name} • {s.duration}min • ${s.price}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+
+            {services.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border p-4">
+                <p className="text-sm text-muted-foreground">
+                  No services available.
+                </p>
+
+                <p className="text-xs text-muted-foreground mt-1">
+                  Create a service first before booking appointments.
+                </p>
+              </div>
+            ) : (
+              <Controller
+                control={control}
+                name="service_id"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((s) => {
+                        const isInactive = s.status === 'inactive';
+
+                        return (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name} • {s.duration}min • {formatBusinessCurrency(s.price)}
+                            {isInactive ? ' • Inactive' : ''}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            )}
+            {selectedService?.status === 'inactive' && (
+              <p className="text-xs text-muted-foreground">
+                This service is inactive and cannot be used for new bookings.
+                This appointment can still be edited because it already exists.
+              </p>
+            )}
             {errors.service_id && (
               <p className="text-sm text-destructive">{errors.service_id.message}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Staff member</Label>
+          {serviceId && staff.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-4">
+              <p className="text-sm text-muted-foreground">
+                No staff members are assigned to this service.
+              </p>
+
+              <p className="mt-1 text-xs text-muted-foreground">
+                Assign a staff member to this service before booking an appointment.
+              </p>
+            </div>
+          ) : (
             <Controller
               control={control}
               name="staff_id"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Any staff" />
                   </SelectTrigger>
+
                   <SelectContent>
-                    <SelectItem value={ANY_STAFF}>Any staff</SelectItem>
+                    <SelectItem value={ANY_STAFF}>
+                      Any staff
+                    </SelectItem>
+
                     {staff.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.full_name}
@@ -360,9 +545,9 @@ export function AppointmentFormDialog({
                 </Select>
               )}
             />
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Date</Label>
               <Input type="date" {...register('appointment_date')} />
@@ -424,7 +609,13 @@ export function AppointmentFormDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSubmitting}>
+          <Button
+            onClick={handleSave}
+            disabled={
+              isSubmitting ||
+              services.length === 0
+            }
+          >
             {isSubmitting ? 'Saving...' : appointment ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>

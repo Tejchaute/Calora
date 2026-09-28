@@ -4,7 +4,10 @@ export const AUTH_ROUTES = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
+
   dashboard: '/dashboard',
+  businessSetup: '/dashboard/setup',
+
   home: '/',
 } as const;
 

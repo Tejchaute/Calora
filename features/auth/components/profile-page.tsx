@@ -52,7 +52,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAccountPreferences } from '../hooks/use-account-preferences';
 
@@ -70,19 +69,35 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const passwordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
+    currentPassword: z
+      .string()
+      .min(1, 'Current password is required'),
+
     newPassword: z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .regex(/[A-Z]/, 'Must contain an uppercase letter')
       .regex(/[a-z]/, 'Must contain a lowercase letter')
       .regex(/[0-9]/, 'Must contain a number'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+
+    confirmPassword: z
+      .string()
+      .min(1, 'Please confirm your password'),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
+  .refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+      message: 'Passwords do not match',
+      path: ['confirmPassword'],
+    }
+  )
+  .refine(
+    (data) => data.currentPassword !== data.newPassword,
+    {
+      message: 'New password must be different from your current password',
+      path: ['newPassword'],
+    }
+  );
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
@@ -168,6 +183,16 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
+    form.reset({
+      firstName: initFirst,
+      lastName: initLast,
+      phone: profile?.phone || '',
+    });
+
+    setAvatarUrl(profile?.avatar_url || '');
+  }, [initFirst, initLast, profile?.phone, profile?.avatar_url, form]);
+
+  useEffect(() => {
     if (!user) return;
     let mounted = true;
     setLoadingMeta(true);
@@ -191,18 +216,25 @@ export function ProfilePage() {
 
   const onSubmit = async (values: ProfileFormValues) => {
     if (!user) return;
+
     setFormError(null);
+
     try {
       await updateProfile(user.id, {
         full_name: joinName(values.firstName, values.lastName),
         phone: values.phone || '',
-        avatar_url: avatarUrl,
+        avatar_url: avatarUrl.trim(),
       });
+
       await refreshProfile();
+
       toast.success('Profile updated successfully');
     } catch (err) {
       const message =
-        err instanceof AuthError ? err.message : 'Failed to update profile. Please try again.';
+        err instanceof AuthError
+          ? err.message
+          : 'Failed to update profile. Please try again.';
+
       setFormError(message);
     }
   };
@@ -219,13 +251,26 @@ export function ProfilePage() {
 
   const onPasswordSubmit = async (values: PasswordFormValues) => {
     setPasswordError(null);
+
     try {
-      await updatePassword(values.newPassword);
+      await updatePassword(
+        values.currentPassword,
+        values.newPassword
+      );
+
       passwordForm.reset();
+
+      setShowCurrent(false);
+      setShowNew(false);
+      setShowConfirm(false);
+
       toast.success('Password changed successfully');
     } catch (err) {
       const message =
-        err instanceof AuthError ? err.message : 'Failed to change password. Please try again.';
+        err instanceof AuthError
+          ? err.message
+          : 'Failed to change password. Please try again.';
+
       setPasswordError(message);
     }
   };
@@ -288,9 +333,12 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          Profile
+        </h1>
+
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your personal information and avatar.
+          Manage your personal information, security, and account preferences.
         </p>
       </div>
 
@@ -323,12 +371,11 @@ export function ProfilePage() {
               id="avatar-url"
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://example.com/avatar.jpg"
               aria-describedby="avatar-hint"
             />
             <p id="avatar-hint" className="text-xs text-muted-foreground">
-              {/* TODO: integrate Supabase Storage file upload here */}
-              Paste an image URL. Direct file upload will be available once storage is configured.
+              Enter a publicly accessible image URL to use as your avatar.
             </p>
           </div>
         </CardContent>
@@ -690,37 +737,30 @@ export function ProfilePage() {
             <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="created-readonly">
-                Account created
-              </label>
-              <div className="relative">
-                <CalendarPlus className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="created-readonly"
-                  value={loadingMeta ? 'Loading...' : createdAt ? formatDate(createdAt) : '—'}
-                  readOnly
-                  className="bg-muted/50 pl-10"
-                  aria-label="Account creation date (read only)"
-                />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-foreground"
+              htmlFor="created-readonly"
+            >
+              Account created
+            </label>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="last-login-readonly">
-                Last login
-              </label>
-              <div className="relative">
-                <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="last-login-readonly"
-                  value={loadingMeta ? 'Loading...' : lastSignIn ? formatDate(lastSignIn) : '—'}
-                  readOnly
-                  className="bg-muted/50 pl-10"
-                  aria-label="Last login date (read only)"
-                />
-              </div>
+            <div className="relative">
+              <CalendarPlus className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+              <Input
+                id="created-readonly"
+                value={
+                  loadingMeta
+                    ? 'Loading...'
+                    : createdAt
+                      ? formatDate(createdAt)
+                      : '—'
+                }
+                readOnly
+                className="bg-muted/50 pl-10"
+                aria-label="Account creation date (read only)"
+              />
             </div>
           </div>
         </CardContent>

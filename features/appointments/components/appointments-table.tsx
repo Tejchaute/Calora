@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Trash2,
   Edit,
   Calendar as CalendarIcon,
 } from 'lucide-react';
@@ -20,17 +19,20 @@ import {
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { formatDate, formatTime, formatCurrency } from '@/lib/utils';
+import { formatDate, formatTime } from '@/lib/utils';
 import type { AppointmentWithRelations, Appointment } from '@/types/database';
+import { useBusinessCurrency } from '@/features/business/hooks/use-business-currency';
+import type { AppointmentView } from '../services/appointments.service';
 
 interface AppointmentsTableProps {
   appointments: AppointmentWithRelations[];
   loading: boolean;
   hasFilters: boolean;
   onEdit: (appointment: Appointment) => void;
-  onDelete: (id: string) => void;
   onStatusChange: (id: string, status: Appointment['status']) => void;
+  pendingIds: Set<string>;
   onCreate: () => void;
+  view: AppointmentView;
 }
 
 export function AppointmentsTable({
@@ -38,10 +40,12 @@ export function AppointmentsTable({
   loading,
   hasFilters,
   onEdit,
-  onDelete,
   onStatusChange,
+  pendingIds,
   onCreate,
+  view,
 }: AppointmentsTableProps) {
+  const { format: formatBusinessCurrency } = useBusinessCurrency();
   if (loading) {
     return (
       <Card>
@@ -64,9 +68,15 @@ export function AppointmentsTable({
         description={
           hasFilters
             ? 'Try adjusting your filters.'
-            : 'Create your first appointment to get started.'
+            : view === 'active'
+              ? 'No active appointments. Past and completed bookings remain available in History.'
+              : 'No appointment history yet.'
         }
-        action={{ label: 'New appointment', onClick: onCreate }}
+        action={
+          view === 'active'
+            ? { label: 'New appointment', onClick: onCreate }
+            : undefined
+        }
       />
     );
   }
@@ -92,7 +102,7 @@ export function AppointmentsTable({
                 <TableRow key={appt.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="font-medium text-foreground">
-                      {appt.customers.full_name}
+                      {appt.customers?.full_name ?? 'Unknown Customer'}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {appt.customers.phone || appt.customers.email}
@@ -100,11 +110,9 @@ export function AppointmentsTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: appt.services.color || undefined }}
-                      />
-                      <span className="text-sm text-foreground">{appt.services.name}</span>
+                      <span className="text-sm text-foreground">
+                        {appt.services?.name ?? 'Unknown Service'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -119,17 +127,21 @@ export function AppointmentsTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-sm font-medium text-foreground">
-                    {formatCurrency(appt.services.price)}
+                    {formatBusinessCurrency(
+                      appt.price_snapshot ?? appt.services?.price ?? 0,
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={appt.status} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      {appt.status === 'pending' && (
+                      {(appt.status === 'pending' || appt.status === 'scheduled') && (
                         <>
                           <button
                             onClick={() => onStatusChange(appt.id, 'confirmed')}
+                            disabled={pendingIds.has(appt.id)}
+                            aria-label={`Confirm ${appt.customers?.full_name ?? 'customer'} appointment`}
                             className="rounded p-1.5 text-primary hover:bg-primary/10"
                             title="Confirm"
                           >
@@ -137,6 +149,8 @@ export function AppointmentsTable({
                           </button>
                           <button
                             onClick={() => onStatusChange(appt.id, 'completed')}
+                            disabled={pendingIds.has(appt.id)}
+                            aria-label={`Complete ${appt.customers?.full_name ?? 'customer'} appointment`}
                             className="rounded p-1.5 text-success hover:bg-success/10"
                             title="Complete"
                           >
@@ -144,6 +158,8 @@ export function AppointmentsTable({
                           </button>
                           <button
                             onClick={() => onStatusChange(appt.id, 'cancelled')}
+                            disabled={pendingIds.has(appt.id)}
+                            aria-label={`Cancel ${appt.customers?.full_name ?? 'customer'} appointment`}
                             className="rounded p-1.5 text-destructive hover:bg-destructive/10"
                             title="Cancel"
                           >
@@ -157,13 +173,6 @@ export function AppointmentsTable({
                         title="Edit"
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(appt.id)}
-                        className="rounded p-1.5 text-destructive hover:bg-destructive/10"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </TableCell>

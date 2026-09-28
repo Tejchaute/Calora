@@ -12,6 +12,7 @@ export interface TopbarProps {
   breadcrumbs?: ReactNode;
   search?: ReactNode;
   notifications?: ReactNode;
+  status?: ReactNode;
   userMenu?: ReactNode;
   showThemeToggle?: boolean;
   onMobileMenuToggle?: () => void;
@@ -24,6 +25,7 @@ export function Topbar({
   breadcrumbs,
   search,
   notifications,
+  status,
   userMenu,
   showThemeToggle = true,
   onMobileMenuToggle,
@@ -59,6 +61,7 @@ export function Topbar({
       <div className="flex-1">{search}</div>
 
       <div className="flex items-center gap-2">
+        {status}
         {showThemeToggle && <ThemeToggle />}
         {notifications}
         {userMenu}

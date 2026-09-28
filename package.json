@@ -11,7 +11,10 @@
     "lint:fix": "next lint --fix",
     "clean": "rimraf .next",
     "format": "prettier --write .",
-    "check": "npm run typecheck && npm run lint"
+    "check": "npm run typecheck && npm run lint",
+    "test:notifications": "tsx --test features/notifications/email/*.test.ts features/notifications/scheduler/*.test.ts && node --test supabase/tests/appointment-notification-events.test.mjs supabase/tests/appointment-confirmation-email.test.mjs supabase/tests/appointment-cancellation-email.test.mjs supabase/tests/appointment-rescheduling-email.test.mjs supabase/tests/appointment-reminders.test.mjs",
+    "test:settings": "tsx --test features/settings/schemas/*.test.ts && node --test supabase/tests/business-notification-settings.test.mjs",
+    "reminders:invoke": "node --env-file=.env.local scripts/invoke-reminder-scheduler.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -44,6 +47,7 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
+    "@react-email/render": "^2.1.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.0",
     "@types/node": "20.6.2",
@@ -59,21 +63,30 @@
     "eslint-config-next": "13.5.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
+    "motion": "^13.2.0",
     "next": "13.5.1",
     "next-themes": "^0.3.0",
     "postcss": "8.4.30",
+    "qrcode.react": "^4.2.0",
     "react": "18.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.53.0",
     "react-resizable-panels": "^2.1.3",
     "recharts": "^2.12.7",
+    "resend": "^6.26.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.185.1",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4",
+    "supabase": "^2.116.0",
+    "tsx": "^4.23.13"
   }
 }

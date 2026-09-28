@@ -18,6 +18,7 @@ const variantStyles: Record<string, string> = {
 
 const statusVariantMap: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
   pending: 'warning',
+  scheduled: 'warning',
   confirmed: 'info',
   completed: 'success',
   cancelled: 'error',
@@ -25,6 +26,7 @@ const statusVariantMap: Record<string, 'success' | 'warning' | 'error' | 'info' 
 
 const statusLabelMap: Record<string, string> = {
   pending: 'Pending',
+  scheduled: 'Pending',
   confirmed: 'Confirmed',
   completed: 'Completed',
   cancelled: 'Cancelled',

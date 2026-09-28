@@ -1,245 +1,223 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import {
-  Plus,
-  Edit,
-  ArrowLeft,
-  Phone,
-  Mail,
-  CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { StatusBadge } from '@/components/shared/status-badge';
 import { CustomersFilters } from './customers-filters';
 import { CustomersTable } from './customers-table';
+import { CustomerDetail } from './customer-detail';
 import { CustomerFormDialog } from './customer-form-dialog';
-import { DeleteCustomerDialog } from './delete-customer-dialog';
 import {
-  getCustomers,
-  deleteCustomer,
-  getCustomerAppointments,
   CUSTOMERS_PAGE_SIZE,
+  getCustomerDetail,
+  getCustomerAppointments,
+  getCustomers,
+  type CustomerDetailData,
+  type CustomerWithIntelligence,
 } from '../services/customers.service';
-import { getInitials, formatDate, formatTime, formatCurrency } from '@/lib/utils';
-import type { Customer, AppointmentWithRelations } from '@/types/database';
-import { toast } from 'sonner';
 import { handleError } from '@/lib/errors/error-handler';
+import { useBusiness } from '@/providers/business-provider';
+import { useBusinessCurrency } from '@/features/business/hooks/use-business-currency';
+import type { Customer } from '@/types/database';
 
 export function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const { business, loading: businessLoading } = useBusiness();
+  const { format: formatBusinessCurrency } = useBusinessCurrency();
+  const [customers, setCustomers] = useState<CustomerWithIntelligence[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
-  const [customerAppts, setCustomerAppts] = useState<AppointmentWithRelations[]>([]);
+  const [detail, setDetail] = useState<CustomerDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const requestIdRef = useRef(0);
+  const detailRequestIdRef = useRef(0);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   const fetchCustomers = useCallback(async () => {
-    setLoading(true);
+    if (!business?.id) {
+      setCustomers([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
+    const requestId = ++requestIdRef.current;
+    if (!hasLoadedRef.current) setLoading(true);
+    setLoadError(false);
     try {
-      const { data, count, error } = await getCustomers({ page, search });
-
-      if (error) {
-        handleError(error, { fallbackMessage: 'Failed to load customers' });
-        return;
-      }
-
+      const { data, count, error } = await getCustomers(business.id, {
+        page,
+        search: debouncedSearch,
+      });
+      if (requestId !== requestIdRef.current) return;
+      if (error) throw error;
       setCustomers(data ?? []);
       setTotal(count ?? 0);
     } catch (error) {
-      handleError(error, { fallbackMessage: 'Unexpected error while loading customers.' });
+      setLoadError(true);
+      handleError(error, { fallbackMessage: 'Failed to load customers' });
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        hasLoadedRef.current = true;
+        setLoading(false);
+      }
     }
-  }, [page, search]);
+  }, [business?.id, page, debouncedSearch]);
 
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    if (!businessLoading) void fetchCustomers();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [businessLoading, fetchCustomers]);
+
+  const loadDetail = useCallback(
+    async (customer: Customer) => {
+      if (!business?.id) return;
+      setDetailCustomer(customer);
+      setDetailLoading(true);
+      setLoadingMore(false);
+      setDetailError(false);
+      const requestId = ++detailRequestIdRef.current;
+      try {
+        const result = await getCustomerDetail(business.id, customer.id);
+        if (requestId !== detailRequestIdRef.current) return;
+        if (result.error || !result.data) throw result.error;
+        setDetail(result.data);
+      } catch (error) {
+        setDetailError(true);
+        handleError(error, {
+          fallbackMessage: 'Failed to load customer history',
+        });
+      } finally {
+        if (requestId === detailRequestIdRef.current) setDetailLoading(false);
+      }
+    },
+    [business?.id],
+  );
 
   const openForm = (customer?: Customer) => {
     setEditCustomer(customer ?? null);
     setFormOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await deleteCustomer(deleteId);
-    if (error) {
-      handleError(error, { fallbackMessage: 'Failed to delete customer' });
-      return;
-    }
-    toast.success('Customer deleted');
-    setDeleteId(null);
-    await fetchCustomers();
-  };
-
-  const openDetail = async (customer: Customer) => {
-    setDetailCustomer(customer);
-    setDetailLoading(true);
-
-    try {
-      const { data, error } = await getCustomerAppointments(customer.id);
-
-      if (error) {
-        handleError(error, { fallbackMessage: 'Failed to load customer history' });
-        return;
-      }
-
-      setCustomerAppts((data as AppointmentWithRelations[]) ?? []);
-    } catch (error) {
-      handleError(error, { fallbackMessage: 'Unexpected error while loading customer history' });
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const totalPages = Math.ceil(total / CUSTOMERS_PAGE_SIZE);
-
   if (detailCustomer) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => setDetailCustomer(null)}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to customers
-        </Button>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
-                  {getInitials(detailCustomer.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">{detailCustomer.full_name}</h2>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {detailCustomer.email && (
-                    <div className="flex items-center gap-1.5">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {detailCustomer.email}
-                    </div>
-                  )}
-                  {detailCustomer.phone && (
-                    <div className="flex items-center gap-1.5">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {detailCustomer.phone}
-                    </div>
-                  )}
-                </div>
-                {detailCustomer.notes && (
-                  <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                    {detailCustomer.notes}
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  openForm(detailCustomer);
-                  setDetailCustomer(null);
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Booking History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {detailLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : customerAppts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CalendarIcon className="h-10 w-10 text-muted-foreground/50" />
-                <p className="mt-3 text-sm text-muted-foreground">No bookings yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {customerAppts.map((appt) => (
-                  <div
-                    key={appt.id}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3"
-                  >
-                    <div
-                      className="h-10 w-1 rounded-full"
-                      style={{ backgroundColor: appt.services.color || undefined }}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-foreground">{appt.services.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDate(appt.appointment_date)} at {formatTime(appt.start_time)} •{' '}
-                        {appt.staff?.full_name || 'Any staff'}
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium text-foreground">
-                      {formatCurrency(appt.services.price)}
-                    </div>
-                    <StatusBadge status={appt.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <CustomerDetail
+          customer={detailCustomer}
+          detail={detail}
+          loading={detailLoading}
+          error={detailError}
+          onBack={() => {
+            detailRequestIdRef.current += 1;
+            setDetailCustomer(null);
+            setDetail(null);
+            setLoadingMore(false);
+          }}
+          onEdit={() => openForm(detailCustomer)}
+          onRetry={() => void loadDetail(detailCustomer)}
+          onLoadMore={() => {
+            if (!business?.id || !detail || loadingMore) return;
+            const customerId = detailCustomer.id;
+            const requestId = detailRequestIdRef.current;
+            setLoadingMore(true);
+            void getCustomerAppointments(business.id, customerId, detail.historyCount)
+              .then(({ data, error }) => {
+                if (requestId !== detailRequestIdRef.current) return;
+                if (error) throw error;
+                setDetail((current) => current?.customerId === customerId ? {
+                  ...current,
+                  appointments: [...current.appointments, ...(data ?? []).filter(
+                    (appointment) => !current.appointments.some((existing) => existing.id === appointment.id),
+                  )],
+                  historyCount: current.historyCount + (data?.length ?? 0),
+                } : current);
+              })
+              .catch((error) => handleError(error, { fallbackMessage: 'Failed to load more appointments' }))
+              .finally(() => {
+                if (requestId === detailRequestIdRef.current) setLoadingMore(false);
+              });
+          }}
+          loadingMore={loadingMore}
+          formatCurrency={formatBusinessCurrency}
+        />
+        <CustomerFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          customer={editCustomer}
+          onSuccess={async () => {
+            await fetchCustomers();
+            await loadDetail(detailCustomer);
+          }}
+        />
+      </>
     );
   }
 
+  const totalPages = Math.ceil(total / CUSTOMERS_PAGE_SIZE);
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Customers</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage your customer database.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Customers
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Understand each customer&apos;s appointment relationship with your
+            business.
+          </p>
         </div>
         <Button onClick={() => openForm()}>
           <Plus className="mr-2 h-4 w-4" />
           Add customer
         </Button>
-      </div>
+      </header>
 
       <CustomersFilters
         search={search}
-        onSearchChange={(v) => {
-          setSearch(v);
+        onSearchChange={(value) => {
+          setSearch(value);
           setPage(0);
         }}
       />
 
-      <CustomersTable
-        customers={customers}
-        loading={loading}
-        hasFilters={search !== ''}
-        onEdit={openForm}
-        onDelete={setDeleteId}
-        onRowClick={openDetail}
-        onCreate={() => openForm()}
-      />
+      {loadError && !loading ? (
+        <div className="rounded-xl border border-destructive/30 p-6 text-center">
+          <p className="font-medium">Unable to load customers</p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            onClick={() => void fetchCustomers()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : (
+        <CustomersTable
+          customers={customers}
+          loading={loading}
+          hasFilters={search !== ''}
+          onEdit={openForm}
+          onRowClick={(customer) => void loadDetail(customer)}
+          onCreate={() => openForm()}
+        />
+      )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <p className="text-sm text-muted-foreground">
             Showing {page * CUSTOMERS_PAGE_SIZE + 1}–
             {Math.min((page + 1) * CUSTOMERS_PAGE_SIZE, total)} of {total}
@@ -248,7 +226,7 @@ export function CustomersPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              onClick={() => setPage((value) => Math.max(0, value - 1))}
               disabled={page === 0}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -257,7 +235,9 @@ export function CustomersPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              onClick={() =>
+                setPage((value) => Math.min(totalPages - 1, value + 1))
+              }
               disabled={page >= totalPages - 1}
             >
               Next
@@ -272,11 +252,6 @@ export function CustomersPage() {
         onOpenChange={setFormOpen}
         customer={editCustomer}
         onSuccess={fetchCustomers}
-      />
-      <DeleteCustomerDialog
-        open={!!deleteId}
-        onOpenChange={(o) => !o && setDeleteId(null)}
-        onConfirm={handleDelete}
       />
     </div>
   );

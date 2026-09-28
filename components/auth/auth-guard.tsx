@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
-import { getGuestRedirectUrl, getLogoutRedirectUrl } from '@/lib/auth/redirects';
+import {
+  getGuestRedirectUrl,
+  getLogoutRedirectUrl,
+} from '@/lib/auth/redirects';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -13,28 +16,27 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading, initialized } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && initialized && !user) {
-      const redirectUrl = `${getLogoutRedirectUrl()}?redirect=${encodeURIComponent('/dashboard')}`;
+      const redirectUrl =
+        `${getLogoutRedirectUrl()}?redirect=${encodeURIComponent(pathname)}`;
+
       router.replace(redirectUrl);
     }
-  }, [user, loading, initialized, router]);
+  }, [user, loading, initialized, pathname, router]);
 
   if (loading || !initialized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Redirecting" />
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;
@@ -53,7 +55,10 @@ export function GuestGuard({ children }: AuthGuardProps) {
   if (loading || !initialized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
+        <Loader2
+          className="h-8 w-8 animate-spin text-primary"
+          aria-label="Loading"
+        />
       </div>
     );
   }
@@ -61,7 +66,10 @@ export function GuestGuard({ children }: AuthGuardProps) {
   if (user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Redirecting" />
+        <Loader2
+          className="h-8 w-8 animate-spin text-primary"
+          aria-label="Redirecting"
+        />
       </div>
     );
   }

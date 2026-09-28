@@ -6,4 +6,4 @@ export async function fetchAppointmentsWithRelations(
   return query.select(APPOINTMENT_SELECT);
 }
 
-export const APPOINTMENT_SELECT = '*, customers(id, full_name, email, phone), services(id, name, duration, price, color), staff(id, full_name, avatar_url)';
+export const APPOINTMENT_SELECT = '*, customers(id, full_name, email, phone), services(id, name, duration, price), staff(id, full_name, avatar_url)';

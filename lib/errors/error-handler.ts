@@ -16,8 +16,21 @@ export function handleError(
     log = true,
   } = options;
 
+  const databaseError = Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error
+  );
+
   if (log) {
-    console.error(error);
+    const diagnostic = error && typeof error === 'object'
+      ? {
+          code: 'code' in error ? error.code : undefined,
+          message: 'message' in error ? error.message : fallbackMessage,
+        }
+      : { message: fallbackMessage };
+
+    console.error('[Calora]', diagnostic);
   }
 
   let message = fallbackMessage;
@@ -27,7 +40,8 @@ export function handleError(
     typeof error === "object" &&
     "message" in error &&
     typeof error.message === "string" &&
-    error.message.trim() !== ""
+    error.message.trim() !== "" &&
+    !databaseError
   ) {
     message = error.message;
   }

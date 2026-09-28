@@ -4,8 +4,17 @@ export const workingHoursSchema = z.object({
   is_open: z.boolean(),
   open_time: z.string().trim().min(1, 'Open time is required.'),
   close_time: z.string().trim().min(1, 'Close time is required.'),
-  break_start: z.string().trim().optional().or(z.literal('')),
-  break_end: z.string().trim().optional().or(z.literal('')),
+  break_start: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || null),
+
+  break_end: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || null),
 });
 
 export type WorkingHoursFormData = z.infer<typeof workingHoursSchema>;

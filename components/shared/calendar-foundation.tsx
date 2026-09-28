@@ -238,7 +238,7 @@ export function TimeSlot({ hour, minute = 0, duration = 60, children, color, cla
   return (
     <div
       className={cn('absolute left-1 right-1 overflow-hidden rounded-md px-2 py-1 text-xs', className)}
-      style={{ top: `${top}px`, height: `${height}px`, backgroundColor: color ?? 'hsl(var(--primary) / 0.15)', borderLeft: `3px solid ${color ?? 'hsl(var(--primary))'}` }}
+      style={{ top: `${top}px`, height: `${height}px`, borderLeft: `3px solid ${color ?? 'hsl(var(--primary))'}` }}
     >
       {children}
     </div>
@@ -270,7 +270,7 @@ export function CalendarLegend({ items, className }: { items: LegendItem[]; clas
     <div className={cn('flex flex-wrap items-center gap-4 px-4 py-2', className)}>
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: item.color }} />
+          <div className="h-3 w-3 rounded-sm" />
           {item.label}
         </div>
       ))}

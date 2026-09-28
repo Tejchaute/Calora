@@ -23,6 +23,7 @@ export interface AuthState {
   loading: boolean;
   error: AuthError | null;
   initialized: boolean;
+  isPasswordRecovery: boolean;
 }
 
 export interface AuthContextValue extends AuthState {

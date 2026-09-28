@@ -19,6 +19,7 @@ import type { Customer } from '@/types/database';
 import { customerSchema } from '../schemas/customer.schema';
 import { createCustomer, updateCustomer } from '../services/customers.service';
 import { handleError } from '@/lib/errors/error-handler';
+import { useBusiness } from '@/providers/business-provider';
 
 interface CustomerFormDialogProps {
   open: boolean;
@@ -55,15 +56,17 @@ export function CustomerFormDialog({
     },
   });
 
+  const { business } = useBusiness();
+
   useEffect(() => {
     if (!open) return;
 
     if (customer) {
       reset({
         full_name: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-        notes: customer.notes,
+        email: customer.email ?? '',
+        phone: customer.phone ?? '',
+        notes: customer.notes ?? '',
       });
     } else {
       reset({
@@ -76,6 +79,11 @@ export function CustomerFormDialog({
   }, [open, customer, reset]);
 
   const handleSave = handleSubmit(async (values) => {
+    if (!business?.id) {
+      toast.error('Business information is not available.');
+      return;
+    }
+
     const payload = {
       full_name: values.full_name,
       email: values.email,
@@ -85,18 +93,33 @@ export function CustomerFormDialog({
 
     try {
       if (customer) {
-        const { error } = await updateCustomer(customer.id, payload);
+        const { error } = await updateCustomer(
+          business.id,
+          customer.id,
+          payload
+        );
+
         if (error) {
-          handleError(error, { fallbackMessage: 'Failed to update customer' });
+          handleError(error, {
+            fallbackMessage: 'Failed to update customer',
+          });
           return;
         }
+
         toast.success('Customer updated');
       } else {
-        const { error } = await createCustomer(payload);
+        const { error } = await createCustomer(
+          business.id,
+          payload
+        );
+
         if (error) {
-          handleError(error, { fallbackMessage: 'Failed to create customer' });
+          handleError(error, {
+            fallbackMessage: 'Failed to create customer',
+          });
           return;
         }
+
         toast.success('Customer added');
       }
 
@@ -104,7 +127,9 @@ export function CustomerFormDialog({
       onOpenChange(false);
       await onSuccess();
     } catch (error) {
-      handleError(error, { fallbackMessage: 'Failed to save customer.' });
+      handleError(error, {
+        fallbackMessage: 'Failed to save customer.',
+      });
     }
   });
 
@@ -124,7 +149,7 @@ export function CustomerFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Phone</Label>
               <Input {...register('phone')} placeholder="+1 234 567 890" />

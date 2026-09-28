@@ -1,4 +1,10 @@
-﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+﻿export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export interface Database {
   public: {
@@ -12,6 +18,13 @@ export interface Database {
         Row: Business;
         Insert: Omit<Business, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Business, 'id'>>;
+      };
+      subscriptions: {
+        Row: Subscription;
+        Insert: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<
+          Omit<Subscription, 'id' | 'business_id' | 'created_at'>
+        >;
       };
       business_members: {
         Row: BusinessMember;
@@ -129,6 +142,183 @@ export interface Database {
         Update: Partial<Omit<AuditLog, 'id'>>;
       };
     };
+    Views: Record<string, never>;
+    Functions: {
+      get_customer_appointment_counts: {
+        Args: { p_business_id: string; p_customer_ids: string[] };
+        Returns: {
+          customer_id: string;
+          appointment_count: number;
+          completed_count: number;
+          cancelled_count: number;
+          operational_count: number;
+          next_appointment_id: string | null;
+          last_appointment_id: string | null;
+        }[];
+      };
+      replace_staff_services: {
+        Args: {
+          p_business_id: string;
+          p_staff_id: string;
+          p_service_ids: string[];
+        };
+        Returns: void;
+      };
+      create_business_with_owner: {
+        Args: {
+          p_name: string;
+          p_slug: string;
+          p_business_type_id: string;
+        };
+        Returns: Business;
+      };
+      get_subscription_access: {
+        Args: {
+          p_business_id: string;
+        };
+        Returns: SubscriptionAccess[];
+      };
+      get_dashboard_business_clock: {
+        Args: { p_business_id: string };
+        Returns: DashboardBusinessClock[];
+      };
+      get_public_booking_context: {
+        Args: {
+          p_booking_slug: string;
+        };
+        Returns: Json;
+      };
+      get_public_booked_slots: {
+        Args: {
+          p_booking_slug: string;
+          p_date: string;
+          p_staff_id?: string;
+        };
+        Returns: Json;
+      };
+      create_public_booking: {
+        Args: {
+          p_booking_slug: string;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_customer_email: string;
+          p_service_id: string;
+          p_staff_id: string | null;
+          p_appointment_date: string;
+          p_start_time: string;
+          p_end_time: string;
+          p_notes?: string;
+        };
+        Returns: Json;
+      };
+      claim_appointment_created_email: {
+        Args: { target_appointment_id: string };
+        Returns: Json | null;
+      };
+      claim_appointment_email: {
+        Args: {
+          target_appointment_id: string;
+          target_event_type: 'appointment.created' | 'appointment.cancelled';
+        };
+        Returns: Json | null;
+      };
+      claim_appointment_rescheduled_email: {
+        Args: { target_appointment_id: string };
+        Returns: Json | null;
+      };
+      claim_due_appointment_email_reminder: {
+        Args: Record<string, never>;
+        Returns: Json | null;
+      };
+      reconcile_missing_appointment_email_reminders: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      update_notification_settings: {
+        Args: {
+          target_business_id: string;
+          target_send_confirmations: boolean;
+          target_send_cancellations: boolean;
+          target_send_rescheduling: boolean;
+          target_send_reminders: boolean;
+          target_reminder_hours_before: number;
+          expected_updated_at?: string | null;
+        };
+        Returns: NotificationSettings;
+      };
+      complete_appointment_created_email: {
+        Args: {
+          target_delivery_id: string;
+          target_idempotency_key: string;
+          target_state: 'sent' | 'failed';
+          target_provider_message_id?: string | null;
+          target_failure_category?: string | null;
+        };
+        Returns: undefined;
+      };
+      validate_appointment_email_claim: {
+        Args: { target_delivery_id: string; target_claim_token: string };
+        Returns: boolean;
+      };
+      list_retryable_appointment_emails: {
+        Args: Record<string, never>;
+        Returns: { appointment_id: string; event_type: string }[];
+      };
+      complete_appointment_email_claim: {
+        Args: {
+          target_delivery_id: string;
+          target_idempotency_key: string;
+          target_claim_token: string;
+          target_state: 'sent' | 'failed';
+          target_provider_message_id?: string | null;
+          target_failure_category?: string | null;
+        };
+        Returns: undefined;
+      };
+      complete_appointment_email: {
+        Args: {
+          target_delivery_id: string;
+          target_idempotency_key: string;
+          target_state: 'sent' | 'failed';
+          target_provider_message_id?: string | null;
+          target_failure_category?: string | null;
+        };
+        Returns: undefined;
+      };
+      save_appointment: {
+        Args: {
+          p_business_id: string;
+          p_customer_id: string;
+          p_service_id: string;
+          p_staff_id: string | null;
+          p_appointment_date: string;
+          p_start_time: string;
+          p_end_time: string;
+          p_notes?: string;
+          p_status?: string;
+          p_appointment_id?: string | null;
+          p_public_booking_slug?: string | null;
+        };
+        Returns: Appointment;
+      };
+      set_appointment_status: {
+        Args: {
+          p_business_id: string;
+          p_appointment_id: string;
+          p_status: string;
+        };
+        Returns: undefined;
+      };
+      update_appointment_metadata: {
+        Args: {
+          p_business_id: string;
+          p_appointment_id: string;
+          p_notes: string;
+          p_status: string;
+        };
+        Returns: Appointment;
+      };
+    };
   };
 }
 
@@ -146,11 +336,7 @@ export interface Profile {
   updated_at: string;
 }
 
-export type BusinessStatus =
-  | 'trial'
-  | 'active'
-  | 'inactive'
-  | 'suspended';
+export type BusinessStatus = 'active' | 'inactive' | 'suspended';
 
 export interface Business {
   id: string;
@@ -162,11 +348,7 @@ export interface Business {
   updated_at: string;
 }
 
-export type BusinessRole =
-  | 'owner'
-  | 'admin'
-  | 'manager'
-  | 'staff';
+export type BusinessRole = 'owner' | 'admin' | 'manager' | 'staff';
 
 export interface BusinessMember {
   id: string;
@@ -187,6 +369,44 @@ export interface BusinessType {
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export type SubscriptionPlan = 'free_trial' | 'legacy' | 'paid';
+
+export type SubscriptionStatus =
+  'trialing' | 'active' | 'past_due' | 'canceled';
+
+export type SubscriptionAccessReason =
+  | 'active_subscription'
+  | 'active_trial'
+  | 'trial_expired'
+  | 'subscription_required';
+
+export interface Subscription {
+  id: string;
+  business_id: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionAccess {
+  subscription_id: string;
+  business_id: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  server_now: string;
+  access_allowed: boolean;
+  access_reason: SubscriptionAccessReason;
 }
 
 export interface BookingSettings {
@@ -229,7 +449,6 @@ export interface Service {
   description: string;
   duration: number;
   price: number;
-  color: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -302,7 +521,6 @@ export interface CustomerTag {
   business_id: string;
   name: string;
   slug: string;
-  color: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -318,11 +536,7 @@ export interface CustomerTagAssignment {
 // Appointments
 // ============================================================
 export type AppointmentStatusType =
-  | 'pending'
-  | 'confirmed'
-  | 'completed'
-  | 'cancelled'
-  | 'no_show';
+  'pending' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
 
 export interface Appointment {
   id: string;
@@ -338,6 +552,10 @@ export interface Appointment {
   service_name_snapshot: string;
   duration_snapshot: number;
   price_snapshot: number;
+  customer_name_snapshot: string | null;
+  customer_phone_snapshot: string | null;
+  customer_email_snapshot: string | null;
+  staff_name_snapshot: string | null;
   notes: string;
   created_at: string;
   updated_at: string;
@@ -347,7 +565,6 @@ export interface AppointmentStatus {
   id: string;
   name: string;
   slug: string;
-  color: string | null;
   sort_order: number;
   is_system: boolean;
   created_at: string;
@@ -356,8 +573,15 @@ export interface AppointmentStatus {
 
 export interface AppointmentWithRelations extends Appointment {
   customers: Pick<Customer, 'id' | 'full_name' | 'email' | 'phone'>;
-  services: Pick<Service, 'id' | 'name' | 'duration' | 'price' | 'color'>;
+  services: Pick<Service, 'id' | 'name' | 'duration' | 'price'>;
   staff: Pick<Staff, 'id' | 'full_name' | 'avatar_url'> | null;
+}
+
+export interface DashboardBusinessClock {
+  server_now: string;
+  business_date: string;
+  business_time: string;
+  timezone: string;
 }
 
 // ============================================================
@@ -431,6 +655,7 @@ export interface NotificationSettings {
   reminder_hours_before: number;
   send_confirmations: boolean;
   send_cancellations: boolean;
+  send_rescheduling: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -463,6 +688,41 @@ export interface NotificationDelivery {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+  event_id: string | null;
+  idempotency_key: string | null;
+  processed_at: string | null;
+  provider_message_id: string | null;
+  failure_category: string | null;
+  due_at: string | null;
+  scheduled_for: string | null;
+  reminder_lead_minutes: number | null;
+}
+
+export type AppointmentLifecycleEventType =
+  | 'appointment.created'
+  | 'appointment.confirmed'
+  | 'appointment.cancelled'
+  | 'appointment.rescheduled'
+  | 'appointment.completed';
+
+export interface AppointmentLifecycleEvent {
+  id: string;
+  business_id: string;
+  appointment_id: string;
+  customer_id: string;
+  service_id: string;
+  staff_id: string | null;
+  event_type: AppointmentLifecycleEventType;
+  event_sequence: number;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  actor_id: string | null;
+  metadata: Json;
+  idempotency_key: string;
+  occurred_at: string;
+  created_at: string;
 }
 
 export interface NotificationChannel {
@@ -506,6 +766,8 @@ export interface BusinessSettings {
   currency: string;
   timezone: string;
   booking_page_slug: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Holiday {

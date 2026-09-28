@@ -1,73 +1,85 @@
-import { supabase } from '@/lib/supabase/client';
-import { APPOINTMENT_SELECT } from '@/lib/supabase/helpers';
-import { format } from 'date-fns';
-import type { Appointment } from '@/types/database';
+import { supabase } from "@/lib/supabase/client";
+import { requestAppointmentCancellationEmail } from "@/features/notifications/email/request-cancellation";
+import { APPOINTMENT_SELECT } from "@/lib/supabase/helpers";
+import type {
+  Appointment,
+  AppointmentWithRelations,
+  DashboardBusinessClock,
+} from "@/types/database";
 
-export async function getDashboardData(today: string) {
-  const [
-    todayAppointments,
-    upcomingAppointments,
-    customers,
-    services,
-    staff,
-    todayList,
-    upcomingList,
-  ] = await Promise.all([
-    supabase
-      .from('appointments')
-      .select('*', { count: 'exact', head: true })
-      .eq('appointment_date', today)
-      .neq('status', 'cancelled'),
-    supabase
-      .from('appointments')
-      .select('*', { count: 'exact', head: true })
-      .gt('appointment_date', today)
-      .neq('status', 'cancelled'),
-    supabase.from('customers').select('*', { count: 'exact', head: true }),
-    supabase.from('services').select('*', { count: 'exact', head: true }),
-    supabase.from('staff').select('*', { count: 'exact', head: true }),
-    supabase
-      .from('appointments')
-      .select(APPOINTMENT_SELECT)
-      .eq('appointment_date', today)
-      .order('start_time')
-      .limit(10),
-    supabase
-      .from('appointments')
-      .select(APPOINTMENT_SELECT)
-      .gt('appointment_date', today)
-      .neq('status', 'cancelled')
-      .order('appointment_date', { ascending: true })
-      .order('start_time', { ascending: true })
-      .limit(5),
-  ]);
+export async function getDashboardData(businessId: string) {
+  const clockResult = await supabase.rpc("get_dashboard_business_clock", {
+    p_business_id: businessId,
+  });
+  if (clockResult.error) throw clockResult.error;
 
-  const responses = [
-    todayAppointments,
-    upcomingAppointments,
-    customers,
-    services,
-    staff,
-    todayList,
-    upcomingList,
-  ];
+  const clock = (
+    Array.isArray(clockResult.data) ? clockResult.data[0] : clockResult.data
+  ) as DashboardBusinessClock | undefined;
+  if (!clock) throw new Error("Business time is unavailable.");
 
-  const failed = responses.find(r => r.error);
+  const futureFilter = `appointment_date.gt.${clock.business_date},and(appointment_date.eq.${clock.business_date},end_time.gt.${clock.business_time})`;
+  const [todayList, upcomingList, customers, services, staff] =
+    await Promise.all([
+      supabase
+        .from("appointments")
+        .select(APPOINTMENT_SELECT)
+        .eq("business_id", businessId)
+        .eq("appointment_date", clock.business_date)
+        .order("start_time")
+        .limit(100),
+      supabase
+        .from("appointments")
+        .select(APPOINTMENT_SELECT)
+        .eq("business_id", businessId)
+        .in("status", ["pending", "scheduled", "confirmed"])
+        .or(futureFilter)
+        .order("appointment_date", { ascending: true })
+        .order("start_time", { ascending: true })
+        .limit(8),
+      supabase
+        .from("customers")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId),
+      supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId)
+        .eq("status", "active"),
+      supabase
+        .from("staff")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId)
+        .eq("status", "active"),
+    ]);
 
-  if (failed) {
-    throw failed.error;
-  }
+  const responses = [todayList, upcomingList, customers, services, staff];
+  const failed = responses.find((response) => response.error);
+  if (failed?.error) throw failed.error;
+
   return {
-    todayAppointments,
-    upcomingAppointments,
-    customers,
-    services,
-    staff,
-    todayList,
-    upcomingList,
+    clock,
+    today: (todayList.data ?? []) as AppointmentWithRelations[],
+    upcoming: (upcomingList.data ?? []) as AppointmentWithRelations[],
+    snapshot: {
+      customers: customers.count ?? 0,
+      services: services.count ?? 0,
+      staff: staff.count ?? 0,
+    },
   };
 }
 
-export async function updateAppointmentStatus(id: string, status: Appointment['status']) {
-  return supabase.from('appointments').update({ status }).eq('id', id);
+export async function updateAppointmentStatus(
+  businessId: string,
+  id: string,
+  status: Appointment["status"],
+) {
+  const result = await supabase.rpc("set_appointment_status", {
+    p_business_id: businessId,
+    p_appointment_id: id,
+    p_status: status,
+  });
+  if (!result.error && status === "cancelled")
+    requestAppointmentCancellationEmail(id);
+  return result;
 }
