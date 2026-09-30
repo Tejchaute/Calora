@@ -1,7 +1,9 @@
 const schedulerPath = '/api/internal/appointment-reminders';
 
 function getSchedulerConfiguration() {
-  const siteUrl = process.env.URL ?? process.env.DEPLOY_PRIME_URL;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calora.in';
+
   const secret = process.env.REMINDER_SCHEDULER_SECRET;
 
   if (!siteUrl || !secret) {
@@ -9,7 +11,10 @@ function getSchedulerConfiguration() {
   }
 
   return {
-    endpoint: new URL(schedulerPath, siteUrl).toString(),
+    endpoint: new URL(
+      '/api/internal/appointment-reminders',
+      siteUrl,
+    ).toString(),
     secret,
   };
 }
