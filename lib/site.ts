@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL = 'https://calora.app';
+const FALLBACK_SITE_URL = 'https://calora.in';
 
 export const siteUrl = new URL(
   process.env.NEXT_PUBLIC_SITE_URL ?? process.env.URL ?? FALLBACK_SITE_URL,
