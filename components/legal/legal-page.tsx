@@ -21,12 +21,18 @@ export function LegalPage({ title, summary, sections }: { title: string; summary
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5146D8]">Draft for legal review</p>
+        <dl className="flex flex-wrap gap-x-8 gap-y-1 text-xs text-[#526078]">
+          <div className="flex items-center gap-1.5">
+            <dt className="font-semibold text-[#172033]">Effective date:</dt>
+            <dd>September 30, 2026</dd>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <dt className="font-semibold text-[#172033]">Last updated:</dt>
+            <dd>September 30, 2026</dd>
+          </div>
+        </dl>
         <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.04em] sm:text-5xl">{title}</h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-[#526078]">{summary}</p>
-        <div className="mt-10 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-          This is a working product-policy draft and has not been represented as legally reviewed. It should be reviewed and approved before production launch.
-        </div>
         <div className="mt-12 space-y-10">
           {sections.map((section) => {
             const id = section.title.replaceAll(' ', '-').toLowerCase();
