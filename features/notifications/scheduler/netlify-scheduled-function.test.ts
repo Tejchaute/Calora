@@ -5,22 +5,29 @@ import processAppointmentReminders from '../../../netlify/functions/process-appo
 const originalFetch = globalThis.fetch;
 const originalUrl = process.env.URL;
 const originalDeployUrl = process.env.DEPLOY_PRIME_URL;
+const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const originalSecret = process.env.REMINDER_SCHEDULER_SECRET;
 
 function restoreEnvironment() {
   globalThis.fetch = originalFetch;
-  if (originalUrl === undefined) delete process.env.URL;
-  else process.env.URL = originalUrl;
-  if (originalDeployUrl === undefined) delete process.env.DEPLOY_PRIME_URL;
-  else process.env.DEPLOY_PRIME_URL = originalDeployUrl;
-  if (originalSecret === undefined) delete process.env.REMINDER_SCHEDULER_SECRET;
-  else process.env.REMINDER_SCHEDULER_SECRET = originalSecret;
+
+  if (originalSiteUrl === undefined) {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+  } else {
+    process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
+  }
+
+  if (originalSecret === undefined) {
+    delete process.env.REMINDER_SCHEDULER_SECRET;
+  } else {
+    process.env.REMINDER_SCHEDULER_SECRET = originalSecret;
+  }
 }
 
 test.afterEach(restoreEnvironment);
 
 test('Netlify schedule invokes only the trusted internal reminder endpoint', async () => {
-  process.env.URL = 'https://calora.in';
+  process.env.NEXT_PUBLIC_SITE_URL = 'https://calora.in';
   process.env.REMINDER_SCHEDULER_SECRET = 'scheduled-function-test-secret';
   let captured: { input: string; init?: RequestInit } | undefined;
   globalThis.fetch = async (input, init) => {
@@ -63,7 +70,7 @@ test('Netlify schedule fails closed when server configuration is absent', async 
 });
 
 test('Netlify reports a failed processor invocation to platform monitoring', async () => {
-  process.env.URL = 'https://calora.in';
+  process.env.NEXT_PUBLIC_SITE_URL = 'https://calora.in';
   process.env.REMINDER_SCHEDULER_SECRET = 'scheduled-function-test-secret';
   globalThis.fetch = async () =>
     new Response(JSON.stringify({ error: 'Reminder processing failed' }), {
