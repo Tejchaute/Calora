@@ -20,7 +20,7 @@ function restoreEnvironment() {
 test.afterEach(restoreEnvironment);
 
 test('Netlify schedule invokes only the trusted internal reminder endpoint', async () => {
-  process.env.URL = 'https://calora-test.netlify.app';
+  process.env.URL = 'https://calora.in';
   process.env.REMINDER_SCHEDULER_SECRET = 'scheduled-function-test-secret';
   let captured: { input: string; init?: RequestInit } | undefined;
   globalThis.fetch = async (input, init) => {
@@ -36,7 +36,7 @@ test('Netlify schedule invokes only the trusted internal reminder endpoint', asy
   assert.equal(response.status, 204);
   assert.equal(
     captured?.input,
-    'https://calora-test.netlify.app/api/internal/appointment-reminders',
+    'https://calora.in/api/internal/appointment-reminders',
   );
   assert.equal(captured?.init?.method, 'POST');
   assert.deepEqual(captured?.init?.headers, {
@@ -63,7 +63,7 @@ test('Netlify schedule fails closed when server configuration is absent', async 
 });
 
 test('Netlify reports a failed processor invocation to platform monitoring', async () => {
-  process.env.URL = 'https://calora-test.netlify.app';
+  process.env.URL = 'https://calora.in';
   process.env.REMINDER_SCHEDULER_SECRET = 'scheduled-function-test-secret';
   globalThis.fetch = async () =>
     new Response(JSON.stringify({ error: 'Reminder processing failed' }), {
